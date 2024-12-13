@@ -32,7 +32,7 @@ and remember to index all the ref vcf files,
 while read -r vcf; do gatk IndexFeatureFile -I ${vcf}; done < toindex.txt
 ```
 
-So far is all ready to run the WES.
+So far is all ready to run the WES pipeline.
 
 ## Just go
 
