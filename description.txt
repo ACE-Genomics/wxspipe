@@ -1,0 +1,7 @@
+realign.pl -> llevar de bam, alineado en B37 a bam alineado en HG38
+fasta2cram.pl -> llevar de FASTA a CRAM alineado en HG38 para almacenar toda la info
+fasta2vcf.pl -> Alinear FASTA a HG38 y llevar a gVCF
+bam2vcf.pl -> Llevar los BAM (o CRAM) alineados a HG38 a gVCF
+vcfjoint.pl -> Hacer el joint call de los gVCF
+parse_reports.pl -> procesar ls QC de los gVCF y crear report
+wtf_tranches.pl -> inspeccionar los tranches del joint
