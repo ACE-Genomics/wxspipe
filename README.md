@@ -1,4 +1,4 @@
-# WES
+# WESpipe
 
 Parallel processing for whole exome sequencing (WES) pipeline
 
