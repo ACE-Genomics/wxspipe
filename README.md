@@ -8,6 +8,10 @@ Parallel processing for whole exome sequencing (WES) pipeline
 
 This scripts use SLURMACE library. To install it just run the *install\_slurmace.sh* script provided here. This should install the perl module into your local PERL5 directory.
 
+Just run 
+```bash
+curl -sL https://raw.githubusercontent.com/asqwerty666/acenip/main/lib/SLURMACE.pm | bash
+```
 ## scripts
 
 The whole project are some scripts that use GATK and other tools to run WES pipeline. 
