@@ -10,7 +10,7 @@ This scripts use SLURMACE library. To install it just run the *install\_slurmace
 
 Just run 
 ```bash
-curl -sL https://raw.githubusercontent.com/asqwerty666/acenip/main/lib/SLURMACE.pm | bash
+curl -sL https://github.com/asqwerty666/wespipe/blob/main/install_slurmace.sh | bash
 ```
 ## scripts
 
