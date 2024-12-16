@@ -1,6 +1,6 @@
 # WESpipe
 
-Parallel processing for whole exome sequencing (WES) pipeline
+Parallel processing for whole exome sequencing (WES) pipeline. [Why in Perl?](https://xkcd.com/224/)
 
 ![Individual WES pipeline](wes_pipe.png)
 
