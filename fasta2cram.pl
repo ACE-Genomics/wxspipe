@@ -23,6 +23,7 @@ my $tmpdir =  $ENV{TMPDIR};
 my $src_dir =  '/nas/Genomica/01-Data/02-WXS/01-Raw.data/202211_WES_PSP-DEGESCO/fqdata/';
 my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/';
 my $ref_name = 'Homo_sapiens_assembly38';
+my $tmp_shit = $ENV{TMPDIR} || '/ruby/'.$ENV{USER}.'/tmp/';
 my $search_pattern = '_1.fq.gz';
 my $alt_pattern = '_2.fq.gz';
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta';
@@ -73,7 +74,7 @@ foreach my $shit (sort keys %pollos){
 		$ptask{output} = $slurmdir.'/'.$shit.'.out';
 		(my $another = $pollos{$shit}) =~ s/$search_pattern/$alt_pattern/;
 		my $rg = '"@RG\\tID:'.$shit.'\\tPL:'.$platform.'\\tLB:'.$libraries.'\\tSM:'.$shit.'"';
-		$ptask{command} = $bwa.' -R '.$rg.' '.$ref_fa.' '.$pollos{$shit}.' '.$another.' | '.$gatk.' SortSam -I /dev/stdin -O '.$tmpdir.'/'.$shit.'_sorted.bam --SORT_ORDER coordinate --CREATE_INDEX true'."\n";
+		$ptask{command} = $bwa.' -R '.$rg.' '.$ref_fa.' '.$pollos{$shit}.' '.$another.' | '.$gatk.' SortSam -I /dev/stdin -O '.$tmpdir.'/'.$shit.'_sorted.bam --SORT_ORDER coordinate --CREATE_INDEX true'." --TMP_DIR $tmp_shit\n";
 		$ptask{command}.= $samtools.' view -@ 8 -T '.$ref_fa.' -C -o '.$outdir.'/'.$shit.'.cram '.$tmpdir.'/'.$shit.'_sorted.bam'."\n";
 		$ptask{command}.= 'rm '.$tmpdir.'/'.$shit.'_sorted.bam';
 		send2slurm(\%ptask);

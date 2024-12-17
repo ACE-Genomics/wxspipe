@@ -114,13 +114,13 @@ foreach my $pollo (sort keys %pollos){
 		$ptask{output} = $slurmdir.'/'.$pollo.'_createSam.out';
 		my $rg = '"@RG\\tID:'.$pollo.'\\tPL:'.$platform.'\\tLB:'.$libraries.'\\tSM:'.$pollo.'"';
 		$ptask{command} = "mkdir -p $tdir; mkdir -p $rdir\n";
-		$ptask{command} .= "$bwa -R ".$rg." $ref_fa $pollos{$pollo} $another | $gatk SortSam -I /dev/stdin -O $tdir/$pollo"."_sorted.bam --SORT_ORDER coordinate --CREATE_INDEX true\n";
+		$ptask{command} .= "$bwa -R ".$rg." $ref_fa $pollos{$pollo} $another | $gatk SortSam -I /dev/stdin -O $tdir/$pollo"."_sorted.bam --SORT_ORDER coordinate --CREATE_INDEX true  --TMP_DIR $tmp_shit\n";
 		$jid = send2slurm(\%ptask);
 		# MarkDuplicates
 		$ptask{job_name} = $pollo.'_markDuplicates';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_markDuplicates.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_markDuplicates.out';
-		$ptask{command} = "$gatk MarkDuplicates -I $tdir/$pollo"."_sorted.bam -O $tdir/$pollo"."_rmdups.bam --METRICS_FILE $rdir/$pollo"."_metrics.txt --QUIET TRUE --MAX_RECORDS_IN_RAM 2000000 --ASSUME_SORTED TRUE --CREATE_INDEX TRUE\n";
+		$ptask{command} = "$gatk MarkDuplicates -I $tdir/$pollo"."_sorted.bam -O $tdir/$pollo"."_rmdups.bam --METRICS_FILE $rdir/$pollo"."_metrics.txt --QUIET TRUE --MAX_RECORDS_IN_RAM 2000000 --ASSUME_SORTED TRUE --CREATE_INDEX TRUE  --TMP_DIR $tmp_shit\n";
 		$ptask{dependency} = "afterok:$jid";
 		$jid = send2slurm(\%ptask);
 		# VerifyBamID (freemix)
@@ -135,21 +135,21 @@ foreach my $pollo (sort keys %pollos){
 		$ptask{job_name} = $pollo.'_baseRecalibrator';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_baseRecalibrator.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_baseRecalibrator.out';
-		$ptask{command} = "$gatk BaseRecalibrator -I $tdir/$pollo"."_rmdups.bam -R $ref_fa -L $unions --known-sites $ref_dir/$known1 --known-sites $ref_dir/$known2 --known-sites $ref_dir/$dbsnp -O $rdir/$pollo"."_recal_data.table\n";
+		$ptask{command} = "$gatk BaseRecalibrator -I $tdir/$pollo"."_rmdups.bam -R $ref_fa -L $unions --known-sites $ref_dir/$known1 --known-sites $ref_dir/$known2 --known-sites $ref_dir/$dbsnp -O $rdir/$pollo"."_recal_data.table --TMP_DIR $tmp_shit\n";
 	      	$ptask{dependency} = "afterok:$jid";
 		$jid = send2slurm(\%ptask);
 		# ApplyBQSR, depende de BaseRecalibrator
 		$ptask{job_name} = $pollo.'_applyBQSR';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_applyBQSR.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_applyBQSR.out';
-		$ptask{command} = "$gatk ApplyBQSR -R $ref_fa -I $tdir/$pollo"."_rmdups.bam -L $unions -bqsr-recal-file $rdir/$pollo"."_recal_data.table -O $rdir/$pollo"."_recal.bam\n";
+		$ptask{command} = "$gatk ApplyBQSR -R $ref_fa -I $tdir/$pollo"."_rmdups.bam -L $unions -bqsr-recal-file $rdir/$pollo"."_recal_data.table -O $rdir/$pollo"."_recal.bam --TMP_DIR $tmp_shit\n";
 		$ptask{dependency} = "afterok:$jid";
 		$jid0 = send2slurm(\%ptask);
 		# AnalyzeCovariates, depende de BaseRecalibrator
 		$ptask{job_name} = $pollo.'_analyzeCovariates';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_analyzeCovariates.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_analyzeCovariates.out';
-		$ptask{command} = "$gatk AnalyzeCovariates -bqsr $rdir/$pollo"."_recal_data.table --plots $rdir/$pollo"."_AnalyzeCovariates.pdf\n";
+		$ptask{command} = "$gatk AnalyzeCovariates -bqsr $rdir/$pollo"."_recal_data.table --plots $rdir/$pollo"."_AnalyzeCovariates.pdf --TMP_DIR $tmp_shit\n";
 		$ptask{dependency} = "afterok:$jid";
 		my $jid1 = send2slurm(\%ptask);
 		push @ljobids, $jid1;
@@ -181,8 +181,8 @@ foreach my $pollo (sort keys %pollos){
 		$ptask{job_name} = $pollo.'_haplotypeCaller';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_haplotypeCaller.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_haplotypeCaller.out';
-		$ptask{command} = "$gatk HaplotypeCaller -R $ref_fa -L $unions -I $rdir/$pollo"."_recal.bam -G StandardAnnotation -G AS_StandardAnnotation -ERC GVCF --dbsnp $ref_dir/$dbsnp -O $rdir/$pollo"."_raw.snps.indels.g.vcf.gz\n";
-		$ptask{command}.= "$gatk VariantEval -R $ref_fa -L $unions -D $ref_dir/$hcsnps -O $rdir/$pollo"."_eval.gatkreport --eval $rdir/$pollo"."_raw.snps.indels.g.vcf.gz\n";
+		$ptask{command} = "$gatk HaplotypeCaller -R $ref_fa -L $unions -I $rdir/$pollo"."_recal.bam -G StandardAnnotation -G AS_StandardAnnotation -ERC GVCF --dbsnp $ref_dir/$dbsnp -O $rdir/$pollo"."_raw.snps.indels.g.vcf.gz --TMP_DIR $tmp_shit\n";
+		$ptask{command}.= "$gatk VariantEval -R $ref_fa -L $unions -D $ref_dir/$hcsnps -O $rdir/$pollo"."_eval.gatkreport --eval $rdir/$pollo"."_raw.snps.indels.g.vcf.gz --TMP_DIR $tmp_shit\n";
 		$ptask{dependency} = "afterok:$jid0";
 		$jid1 = send2slurm(\%ptask);
 		push @ljobids, $jid1;

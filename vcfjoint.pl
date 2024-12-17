@@ -91,19 +91,19 @@ foreach my $chr (@chrs){
 	$ptask{filename} = $slurmdir.'/'.$chr.'_GenoypeGVCFs_'.$chr.'.sh';
 	$ptask{output} = $slurmdir.'/'.$chr.'_GenoypeGVCFs_'.$chr.'.out';
 	my $dbdir = "$outdir/wes.chr$chr.db";
-	$ptask{command} = "$gatk  GenomicsDBImport --genomicsdb-workspace-path $dbdir --batch-size 50 --sample-name-map $hencoop  -L chr $chr  --reader-threads 8\n";
-	$ptask{command}.= "$gatk  GenotypeGVCFs -R $ref_fa  -V gendb://$dbdir -G StandardAnnotation -G AS_StandardAnnotation -O $outdir/wes.chr$chr.snps.indels.g.vcf.gz\n";
+	$ptask{command} = "$gatk  GenomicsDBImport --genomicsdb-workspace-path $dbdir --batch-size 50 --sample-name-map $hencoop  -L chr $chr  --reader-threads 8 --TMP_DIR $tmp_shit\n";
+	$ptask{command}.= "$gatk  GenotypeGVCFs -R $ref_fa  -V gendb://$dbdir -G StandardAnnotation -G AS_StandardAnnotation -O $outdir/wes.chr$chr.snps.indels.g.vcf.gz --TMP_DIR $tmp_shit\n";
 	my $jid = send2slurm(\%ptask);
 	push @jobs, $jid;
 	push @tmp_joint, "$outdir/wes.chr$chr.snps.indels.g.vcf.gz";
 }
 my %gtask = (cpus => 12, time => '72:0:0', mem_per_cpu => '4G', debug => $test, job_name => 'gather', filename => "$slurmdir/gather.sh", 'output' => "$slurmdir/gather.out", dependency => 'afterok:'.join(',afterok:', @jobs));
 my $ppool = join(' -I ', @tmp_joint);
-$gtask{command} = "$gatk GatherVcfs -I $ppool -O $outdir/wes_joint_chr_norec.vcf.gz\n";
-$gtask{command}.= "$gatk IndexFeatureFile -I $outdir/wes_joint_chr_norec.vcf.gz\n";
-$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $outdir/wes_joint_chr_norec.vcf.gz $resss_snp $troptions_snp -O $outdir/wes_joint_chr.snps.recal  --tranches-file $outdir/wes_joint_chr.snps.recalibrate.tranches --rscript-file $outdir/wes_joint_chr.snps.recalibrate.plots.R\n";
-$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $outdir/wes_joint_chr_norec.vcf.gz $resss_indel $troptions_indel -O $outdir/wes_joint_chr.indels.recal --tranches-file $outdir/wes_joint_chr.indels.recalibrate.tranches --rscript-file $outdir/wes_joint_chr.indels.recalibrate.plots.R\n";
-$gtask{command}.= "$gatk  ApplyVQSR -R $ref_fa -V $outdir/wes_joint_chr_norec.vcf.gz  -mode SNP --truth-sensitivity-filter-level 99.7 --recal-file $outdir/wes_joint_chr.snps.recal  --tranches-file $outdir/wes_joint_chr.snps.recalibrate.tranches -O $outdir/wes_joint_chr.snps.g_recalibrated.vcf.gz\n";
-$gtask{command}.= "$gatk  ApplyVQSR -R $ref_fa -V $outdir/wes_joint_chr.snps.g_recalibrated.vcf.gz -mode INDEL --truth-sensitivity-filter-level 99.7 --recal-file $outdir/wes_joint_chr.indels.recal --tranches-file $outdir/wes_joint_chr.indels.recalibrate.tranches -O $outdir/wes_joint_chr.snps.indels.g_recalibrated.vcf.gz\n";
+$gtask{command} = "$gatk GatherVcfs -I $ppool -O $outdir/wes_joint_chr_norec.vcf.gz --TMP_DIR $tmp_shit\n";
+$gtask{command}.= "$gatk IndexFeatureFile -I $outdir/wes_joint_chr_norec.vcf.gz --TMP_DIR $tmp_shit\n";
+$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $outdir/wes_joint_chr_norec.vcf.gz $resss_snp $troptions_snp -O $outdir/wes_joint_chr.snps.recal  --tranches-file $outdir/wes_joint_chr.snps.recalibrate.tranches --rscript-file $outdir/wes_joint_chr.snps.recalibrate.plots.R --TMP_DIR $tmp_shit\n";
+$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $outdir/wes_joint_chr_norec.vcf.gz $resss_indel $troptions_indel -O $outdir/wes_joint_chr.indels.recal --tranches-file $outdir/wes_joint_chr.indels.recalibrate.tranches --rscript-file $outdir/wes_joint_chr.indels.recalibrate.plots.R --TMP_DIR $tmp_shit\n";
+$gtask{command}.= "$gatk  ApplyVQSR -R $ref_fa -V $outdir/wes_joint_chr_norec.vcf.gz  -mode SNP --truth-sensitivity-filter-level 99.7 --recal-file $outdir/wes_joint_chr.snps.recal  --tranches-file $outdir/wes_joint_chr.snps.recalibrate.tranches -O $outdir/wes_joint_chr.snps.g_recalibrated.vcf.gz --TMP_DIR $tmp_shit\n";
+$gtask{command}.= "$gatk  ApplyVQSR -R $ref_fa -V $outdir/wes_joint_chr.snps.g_recalibrated.vcf.gz -mode INDEL --truth-sensitivity-filter-level 99.7 --recal-file $outdir/wes_joint_chr.indels.recal --tranches-file $outdir/wes_joint_chr.indels.recalibrate.tranches -O $outdir/wes_joint_chr.snps.indels.g_recalibrated.vcf.gz --TMP_DIR $tmp_shit\n";
 $gtask{mailtype} = 'FAIL,TIME_LIMIT,STAGE_OUT,END';
 send2slurm(\%gtask);
