@@ -53,6 +53,7 @@ The scripts has also some basic optional input options for do some testing in yo
 
 ## TO DO
 
+   * More test on real data
    * More docs!
 
 
