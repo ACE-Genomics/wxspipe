@@ -81,7 +81,7 @@ foreach my $pollo (@mlist){
 	$cdata{job_name} = $pollo.'_RevertSam';
 	$cdata{filename} = $slurmdir.'/'.$pollo.'_RevertSam.sh';
 	$cdata{output} =  $slurmdir.'/'.$pollo.'_RevertSam.out';
-	$cdata{command} = "mkdir $tmpdir\n";
+	$cdata{command} = "mkdir -p $tmpdir\n";
 	$cdata{command}.= "cp $src_dir/$pollo/$pollo.b* $tmpdir/\n";
 	$cdata{command}.= "$gatk RevertSam -I $tmpdir/$pollo.bam -O $tmpdir/$pollo"."_u.bam -R $ref_fa\n";
 	$cdata{command}.= "$gatk SortSam -I $tmpdir/$pollo"."_u.bam -O $tmpdir/$pollo"."_us.bam -SORT_ORDER queryname\n";
