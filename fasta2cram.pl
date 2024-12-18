@@ -13,22 +13,23 @@ use File::Temp qw( :mktemp tempdir);
 use Data::Dump qw(dump);
 my $cfile;
 my $outdir;
+my %wesconf;
 my $workdir = getcwd;
-my $slurmdir = $workdir.'/slurm';
 my $debug = 0;
+my $init;
 my $tmpdir =  $ENV{TMPDIR};
 ############################################################
 # Variables con los PATHS. Cambiar aqui lo que sea necesario
 #############################################################
-my $src_dir =  '/nas/Genomica/01-Data/02-WXS/01-Raw.data/202211_WES_PSP-DEGESCO/fqdata/';
+#my $src_dir =  '/nas/Genomica/01-Data/02-WXS/01-Raw.data/202211_WES_PSP-DEGESCO/fqdata/';
 my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/';
 my $ref_name = 'Homo_sapiens_assembly38';
 my $tmp_shit = $ENV{TMPDIR} || '/ruby/'.$ENV{USER}.'/tmp/';
-my $search_pattern = '_1.fq.gz';
-my $alt_pattern = '_2.fq.gz';
+#my $search_pattern = '_1.fq.gz';
+#my $alt_pattern = '_2.fq.gz';
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta';
-my $platform = 'ILLUMINA';
-my $libraries = 'KAPPA_TE';
+#my $platform = 'ILLUMINA';
+#my $libraries = 'KAPPA_TE';
 #################################################################
 #################################################################
 #################################################################
@@ -42,14 +43,26 @@ while (@ARGV and $ARGV[0] =~ /^-/) {
 	last if /^--$/;
 	if (/^-c/) { $cfile = shift; chomp($cfile);}
 	if (/^-g/) { $debug = 1;}
-	if (/^-o/) { $outdir = shift; chomp($outdir);}
+	if (/^-i/) { $init = shift; chomp($init);}
 }
-$outdir = $workdir.'/crams' unless $outdir;
+die "Should supply init data file\n" unless $init;
+open IDF, "<$init";
+while (<IDF>){
+	if (/^#.*/ or /^\s*$/) { next; }
+	my ($n, $v) = /(\S*)\s*=\s*(\S*)/;
+	$wesconf{$n} = $v;
+}
+close IDF;
+$wesconf{outdir} = $workdir.'/output' unless $wesconf{outdir};
+mkdir $wesconf{outdir} unless -d $wesconf{outdir};
+my $slurmdir = $wesconf{outdir}.'/slurm';
+mkdir $slurmdir unless -d $slurmdir;
+
 my %ptask = (cpus => 8, job_name => 'wes', time => '8:0:0', mem_per_cpu => '4G', debug => $debug);
 
-die "No such directory mate\n" unless -d $src_dir;
-my @content = find(file => 'name' => "*$search_pattern", in => $src_dir);
-my %pollos = map {/.*\/(\w+?)$search_pattern$/; $1 => $_} @content;
+die "No such directory mate\n" unless -d $wesconf{src_dir};
+my @content = find(file => 'name' => "*$wesconf{search_pattern}", in => $wesconf{src_dir});
+my %pollos = map {/.*\/(\w+?)$wesconf{search_pattern}$/; $1 => $_} @content;
 my @cuts;
 if ($cfile) {
 	open IDF, "<$cfile" or die "No such input file!\n";
@@ -58,8 +71,6 @@ if ($cfile) {
 	close IDF;
 }
 
-mkdir $slurmdir unless -d $slurmdir;
-mkdir $outdir unless -d $outdir;
 
 foreach my $shit (sort keys %pollos){
 	my $go = 0;
@@ -72,10 +83,10 @@ foreach my $shit (sort keys %pollos){
 		$ptask{job_name} = 'compact_data';
 		$ptask{filename} = $slurmdir.'/'.$shit.'.sh';
 		$ptask{output} = $slurmdir.'/'.$shit.'.out';
-		(my $another = $pollos{$shit}) =~ s/$search_pattern/$alt_pattern/;
-		my $rg = '"@RG\\tID:'.$shit.'\\tPL:'.$platform.'\\tLB:'.$libraries.'\\tSM:'.$shit.'"';
+		(my $another = $pollos{$shit}) =~ s/$wesconf{search_pattern}/$wesconf{alt_pattern}/;
+		my $rg = '"@RG\\tID:'.$shit.'\\tPL:'.$wesconf{platform}.'\\tLB:'.$wesconf{libraries}.'\\tSM:'.$shit.'"';
 		$ptask{command} = $bwa.' -R '.$rg.' '.$ref_fa.' '.$pollos{$shit}.' '.$another.' | '.$gatk.' SortSam -I /dev/stdin -O '.$tmpdir.'/'.$shit.'_sorted.bam --SORT_ORDER coordinate --CREATE_INDEX true'." --TMP_DIR $tmp_shit\n";
-		$ptask{command}.= $samtools.' view -@ 8 -T '.$ref_fa.' -C -o '.$outdir.'/'.$shit.'.cram '.$tmpdir.'/'.$shit.'_sorted.bam'."\n";
+		$ptask{command}.= $samtools.' view -@ 8 -T '.$ref_fa.' -C -o '.$wesconf{outdir}.'/'.$shit.'.cram '.$tmpdir.'/'.$shit.'_sorted.bam'."\n";
 		$ptask{command}.= 'rm '.$tmpdir.'/'.$shit.'_sorted.bam';
 		send2slurm(\%ptask);
 	}

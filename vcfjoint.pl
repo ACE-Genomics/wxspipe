@@ -16,15 +16,6 @@ use Data::Dump qw(dump);
 #   - For execution into SLURM: https://github.com/asqwerty666/acenip/blob/main/doc/SLURMACE.md 
 ############################################# 
 #
-# Edit info here
-#
-my $src_dir = '/nas/Genomica/01-Data/02-WXS/02-Processed/202201_TS_EOAD-DEGESCO/02-gVCF/';
-my $panel_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/202201_NGS_TS_EOAD-DEGESCO/panel/';my $baits = $panel_dir.'/EOAD_hg38_bait.interval_list';
-my $targets = $panel_dir.'/EOAD_hg38_target.interval_list';
-my $unions = $panel_dir.'/EOAD_hg38_union.interval_list';
-my $outdir = '/nas/osotolongo/wes1/output';
-my $search_pattern = '_raw.snps.indels.g.vcf.gz';
-# 
 # Data Paths  
 #
 my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/';
@@ -50,19 +41,28 @@ my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /the_dysk:
 my $cfile; 
 my $debug = 0; 
 my $test = 0; 
+my $init; 
+my %wesconf;
 while (@ARGV and $ARGV[0] =~ /^-/) {         
 	$_ = shift;         
 	last if /^--$/;         
 	if (/^-c/) { $cfile = shift; chomp($cfile);}         
-	if (/^-o/) { $outdir = shift; chomp($outdir);}         
+	if (/^-i/) { $init = shift; chomp($init);}         
 	if (/^-g/) { $debug = 1;}         
 	if (/^-t/) { $test = 1;}         
-	if (/^-s/) { $src_dir = shift; chomp($src_dir);} 
 } 
-my $workdir = getcwd; 
-$outdir = $workdir.'/output' unless $outdir; 
-mkdir $outdir unless -d $outdir; 
-my $slurmdir = $outdir.'/slurm'; 
+die "Should supply init data file\n" unless $init;
+open IDF, "<$init";
+while (<IDF>){
+	if (/^#.*/ or /^\s*$/) { next; }
+	my ($n, $v) = /(\S*)\s*=\s*(\S*)/;
+	$wesconf{$n} = $v;
+}
+close IDF;
+my $workdir = getcwd;
+$wesconf{outdir} = $workdir.'/output' unless $wesconf{outdir};
+mkdir $wesconf{outdir} unless -d $wesconf{outdir};
+my $slurmdir = $wesconf{outdir}.'/slurm'; 
 mkdir $slurmdir unless -d $slurmdir; 
 # Do you want to process just a subset? Read the supplied list of subjects  
 my @plist; 
@@ -71,9 +71,9 @@ if ($cfile and -f $cfile) {
 	chomp (@plist = <$handle>);         
 	close $handle; 
 }
-my @content = find(file => 'name' => "*$search_pattern", in => $src_dir);
-my %pollos = map {/.*\/(\w+?)$search_pattern$/; $1 => $_} @content;
-my $hencoop = "$outdir/subjects.list";
+my @content = find(file => 'name' => "*$wesconf{search_pattern}", in => $wesconf{src_dir});
+my %pollos = map {/.*\/(\w+?)$wesconf{search_pattern}$/; $1 => $_} @content;
+my $hencoop = "$wesconf{outdir}/subjects.list";
 open LDF, ">$hencoop" or die "Could not create the subject list\n";
 foreach my $pollo (sort keys %pollos){
 	print LDF "$pollo\t$pollos{$pollo}\n" if grep {/$pollo/} @plist;
@@ -90,20 +90,20 @@ foreach my $chr (@chrs){
 	$ptask{job_name} = 'GenoypeGVCFs_'.$chr;
 	$ptask{filename} = $slurmdir.'/'.$chr.'_GenoypeGVCFs_'.$chr.'.sh';
 	$ptask{output} = $slurmdir.'/'.$chr.'_GenoypeGVCFs_'.$chr.'.out';
-	my $dbdir = "$outdir/wes.chr$chr.db";
-	$ptask{command} = "$gatk  GenomicsDBImport --genomicsdb-workspace-path $dbdir --batch-size 50 --sample-name-map $hencoop  -L chr $chr  --reader-threads 8 --TMP_DIR $tmp_shit\n";
-	$ptask{command}.= "$gatk  GenotypeGVCFs -R $ref_fa  -V gendb://$dbdir -G StandardAnnotation -G AS_StandardAnnotation -O $outdir/wes.chr$chr.snps.indels.g.vcf.gz --TMP_DIR $tmp_shit\n";
+	my $dbdir = "$wesconf{outdir}/wes.chr$chr.db";
+	$ptask{command} = "$gatk  GenomicsDBImport --genomicsdb-workspace-path $dbdir --batch-size 50 --sample-name-map $hencoop  -L chr $chr  --reader-threads 8\n";
+	$ptask{command}.= "$gatk  GenotypeGVCFs -R $ref_fa  -V gendb://$dbdir -G StandardAnnotation -G AS_StandardAnnotation -O $wesconf{outdir}/wes.chr$chr.snps.indels.g.vcf.gz\n";
 	my $jid = send2slurm(\%ptask);
 	push @jobs, $jid;
-	push @tmp_joint, "$outdir/wes.chr$chr.snps.indels.g.vcf.gz";
+	push @tmp_joint, "$wesconf{outdir}/wes.chr$chr.snps.indels.g.vcf.gz";
 }
 my %gtask = (cpus => 12, time => '72:0:0', mem_per_cpu => '4G', debug => $test, job_name => 'gather', filename => "$slurmdir/gather.sh", 'output' => "$slurmdir/gather.out", dependency => 'afterok:'.join(',afterok:', @jobs));
 my $ppool = join(' -I ', @tmp_joint);
-$gtask{command} = "$gatk GatherVcfs -I $ppool -O $outdir/wes_joint_chr_norec.vcf.gz --TMP_DIR $tmp_shit\n";
-$gtask{command}.= "$gatk IndexFeatureFile -I $outdir/wes_joint_chr_norec.vcf.gz --TMP_DIR $tmp_shit\n";
-$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $outdir/wes_joint_chr_norec.vcf.gz $resss_snp $troptions_snp -O $outdir/wes_joint_chr.snps.recal  --tranches-file $outdir/wes_joint_chr.snps.recalibrate.tranches --rscript-file $outdir/wes_joint_chr.snps.recalibrate.plots.R --TMP_DIR $tmp_shit\n";
-$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $outdir/wes_joint_chr_norec.vcf.gz $resss_indel $troptions_indel -O $outdir/wes_joint_chr.indels.recal --tranches-file $outdir/wes_joint_chr.indels.recalibrate.tranches --rscript-file $outdir/wes_joint_chr.indels.recalibrate.plots.R --TMP_DIR $tmp_shit\n";
-$gtask{command}.= "$gatk  ApplyVQSR -R $ref_fa -V $outdir/wes_joint_chr_norec.vcf.gz  -mode SNP --truth-sensitivity-filter-level 99.7 --recal-file $outdir/wes_joint_chr.snps.recal  --tranches-file $outdir/wes_joint_chr.snps.recalibrate.tranches -O $outdir/wes_joint_chr.snps.g_recalibrated.vcf.gz --TMP_DIR $tmp_shit\n";
-$gtask{command}.= "$gatk  ApplyVQSR -R $ref_fa -V $outdir/wes_joint_chr.snps.g_recalibrated.vcf.gz -mode INDEL --truth-sensitivity-filter-level 99.7 --recal-file $outdir/wes_joint_chr.indels.recal --tranches-file $outdir/wes_joint_chr.indels.recalibrate.tranches -O $outdir/wes_joint_chr.snps.indels.g_recalibrated.vcf.gz --TMP_DIR $tmp_shit\n";
+$gtask{command} = "$gatk GatherVcfs -I $ppool -O $wesconf{outdir}/wes_joint_chr_norec.vcf.gz\n";
+$gtask{command}.= "$gatk IndexFeatureFile -I $wesconf{outdir}/wes_joint_chr_norec.vcf.gz\n";
+$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $wesconf{outdir}/wes_joint_chr_norec.vcf.gz $resss_snp $troptions_snp -O $wesconf{outdir}/wes_joint_chr.snps.recal  --tranches-file $wesconf{outdir}/wes_joint_chr.snps.recalibrate.tranches --rscript-file $wesconf{outdir}/wes_joint_chr.snps.recalibrate.plots.R\n";
+$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $wesconf{outdir}/wes_joint_chr_norec.vcf.gz $resss_indel $troptions_indel -O $wesconf{outdir}/wes_joint_chr.indels.recal --tranches-file $wesconf{outdir}/wes_joint_chr.indels.recalibrate.tranches --rscript-file $wesconf{outdir}/wes_joint_chr.indels.recalibrate.plots.R\n";
+$gtask{command}.= "$gatk  ApplyVQSR -R $ref_fa -V $wesconf{outdir}/wes_joint_chr_norec.vcf.gz  -mode SNP --truth-sensitivity-filter-level 99.7 --recal-file $wesconf{outdir}/wes_joint_chr.snps.recal  --tranches-file $wesconf{outdir}/wes_joint_chr.snps.recalibrate.tranches -O $wesconf{outdir}/wes_joint_chr.snps.g_recalibrated.vcf.gz\n";
+$gtask{command}.= "$gatk  ApplyVQSR -R $ref_fa -V $wesconf{outdir}/wes_joint_chr.snps.g_recalibrated.vcf.gz -mode INDEL --truth-sensitivity-filter-level 99.7 --recal-file $wesconf{outdir}/wes_joint_chr.indels.recal --tranches-file $wesconf{outdir}/wes_joint_chr.indels.recalibrate.tranches -O $wesconf{outdir}/wes_joint_chr.snps.indels.g_recalibrated.vcf.gz\n";
 $gtask{mailtype} = 'FAIL,TIME_LIMIT,STAGE_OUT,END';
 send2slurm(\%gtask);

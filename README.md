@@ -39,20 +39,47 @@ So far is all ready to run the WES pipeline.
 
 ## Just go
 
-Now you are ready to go but first you will need to edit the scripts and modify some initial variables like source and output directories, location of interval lists, etc. Then you find the script that suits your needs and try it!
+Now you are ready to go but first you will need to create/edit an init file, that is, a file describing your data. This is an example,
+
+```
+# Source dir of FASTA or CRAM files 
+src_dir = /home/Genomics/Data/Raw.data/My_project/FASTA/ 
+# Directory containing BAIT and TARGET interval lists 
+panel_dir = /home/Genomics/Data/Reference/My_project/
+# BAIT intervals 
+baits = Exome_RefSeq_baits.interval_list 
+# TARGET intervals 
+targets = Exome_RefSeq_targets.interval_list 
+# BAIT + TARGET intervals. You really need only this one. If in doubt, put BAIT and TARGET same 
+unions = Exome_RefSeq_unions.interval_list 
+# BAIT + TARGET bed file. Usually the original where the interval lists come from (not sure if needed) 
+union_bed = Exome_RefSeq_hg38.bed 
+# Output directory. Where your results will be stored 
+outdir = /home/osotolongo/wes/output 
+# Search pattern for FASTA or CRAM files. Actually the part that is different from first and second fasta 
+search_pattern = _1.fastq.gz 
+# Pattern for the second FASTA 
+alt_pattern = _2.fastq.gz 
+# Pattern for excluding files. Do not process files with this string in the path 
+cleaner = call 
+# Identifier for the platform of adquisition 
+platform = ILLUMINA 
+# Identifier for the adquisition libraries 
+libraries = NGS
+```
+You should respect the name of variables in this file since the scripts depend on them. Then you find the script that suits your needs and try it!
 
 ### Some options
 
 The scripts has also some basic optional input options for do some testing in your sample,
 
+   * -i : the only compulsory option _-i project.init_, pointing where your init file is.
    * -c : especify a file with a subsebt of the subjects to analyze, run the script only on these subjects
-   * -o : especify where to storage the output
-   * -s : especify where to look for subject's fasta files
    * -g : for debugging pourposes, do not remove intermediate temporary files
    * -t : actually do not run nothing but create the full SLURM structure, usefull to inspect the slurm script that will be send into the cluster
 
 ## TO DO
-
+   
    * More test on real data
    * More docs!
 

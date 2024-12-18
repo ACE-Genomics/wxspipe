@@ -16,19 +16,6 @@ use Data::Dump qw(dump);
 #   - For execution into SLURM: https://github.com/asqwerty666/acenip/blob/main/doc/SLURMACE.md 
 ############################################# 
 #
-# Edit info here
-#
-my $src_dir = '/nas/Genomica/01-Data/02-WXS/01-Raw.data/202211_WES_PSP-DEGESCO/fqdata/';
-my $panel_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/202211_KAPA_WES_PSP-DEGESCO/';
-my $baits = $panel_dir.'/KAPA_HyperExome_hg38_bait.interval_list';
-my $targets = $panel_dir.'/KAPA_HyperExome_hg38_target.interval_list';
-my $unions = $panel_dir.'/KAPA_HyperExome_hg38_union.interval_list';
-my $union_bed = $panel_dir.'KAPA_HyperExome_hg38_capture_primary_targets_union.bed';
-my $outdir = '/nas/osotolongo/wes1/output';
-my $search_pattern = '_1.fq.gz';
-my $alt_pattern = '_2.fq.gz';
-my $platform = 'ILLUMINA'; my $libraries = 'KAPPA_TE';
-#
 # Data Paths 
 # 
 my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/'; 
@@ -59,20 +46,29 @@ my $snpEff = 'java -Xmx8g -jar /nas/software/snpEff/snpEff.jar';
 #
 my $cfile; 
 my $debug = 0; 
-my $test = 0; 
+my $test = 0;
+my $init;
+my %wesconf;
 while (@ARGV and $ARGV[0] =~ /^-/) {
 	$_ = shift;         
 	last if /^--$/;         
 	if (/^-c/) { $cfile = shift; chomp($cfile);}         
-	if (/^-o/) { $outdir = shift; chomp($outdir);}         
+	if (/^-i/) { $init = shift; chomp($init);}         
 	if (/^-g/) { $debug = 1;}         
 	if (/^-t/) { $test = 1;}         
-	if (/^-s/) { $src_dir = shift; chomp($src_dir);} 
 } 
+die "Should supply init data file\n" unless $init;
+open IDF, "<$init";
+while (<IDF>){
+	if (/^#.*/ or /^\s*$/) { next; }
+	my ($n, $v) = /(\S*)\s*=\s*(\S*)/;
+	$wesconf{$n} = $v;
+}
+close IDF;
 my $workdir = getcwd;
-$outdir = $workdir.'/output' unless $outdir;
-mkdir $outdir unless -d $outdir; 
-my $slurmdir = $outdir.'/slurm'; 
+$wesconf{outdir} = $workdir.'/output' unless $wesconf{outdir};
+mkdir $wesconf{outdir} unless -d $wesconf{outdir}; 
+my $slurmdir = $wesconf{outdir}.'/slurm'; 
 mkdir $slurmdir unless -d $slurmdir;
 # Do you want to process just a subset? Read the supplied list of subjects 
 my @plist; 
@@ -82,9 +78,9 @@ if ($cfile and -f $cfile) {
 	close $handle; 
 }
 my %ptask = (cpus => 8, time => '24:0:0', mem_per_cpu => '4G', debug => $test);
-die "No such directory mate\n" unless -d $src_dir;
-my @content = find(file => 'name' => "*$search_pattern", in => $src_dir);
-my %pollos = map {/.*\/(\w+?)$search_pattern$/; $1 => $_} @content;
+die "No such directory mate\n" unless -d $wesconf{src_dir};
+my @content = find(file => 'name' => "*$wesconf{search_pattern}", in => $wesconf{src_dir});
+my %pollos = map {/.*\/(\w+?)$wesconf{search_pattern}$/; $1 => $_} @content;
 my @jobs;
 foreach my $pollo (sort keys %pollos){
 	my @ljobids;
@@ -95,10 +91,10 @@ foreach my $pollo (sort keys %pollos){
 		$go = 1;
 	}
 	if (-f $pollos{$pollo} and $go){
-		my $qdir = "$outdir/$pollo/qc";
-		my $rdir = "$outdir/$pollo/results";
-		my $tdir = "$outdir/$pollo/tmp";
-		(my $another = $pollos{$pollo}) =~ s/$search_pattern/$alt_pattern/;
+		my $qdir = "$wesconf{outdir}/$pollo/qc";
+		my $rdir = "$wesconf{outdir}/$pollo/results";
+		my $tdir = "$wesconf{outdir}/$pollo/tmp";
+		(my $another = $pollos{$pollo}) =~ s/$wesconf{search_pattern}/$wesconf{alt_pattern}/;
 		# FASTQC	
 		$ptask{job_name} = $pollo.'_fastQc';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_fastQc.sh';
@@ -112,7 +108,7 @@ foreach my $pollo (sort keys %pollos){
 		$ptask{job_name} = $pollo.'_createSam';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_createSam.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_createSam.out';
-		my $rg = '"@RG\\tID:'.$pollo.'\\tPL:'.$platform.'\\tLB:'.$libraries.'\\tSM:'.$pollo.'"';
+		my $rg = '"@RG\\tID:'.$pollo.'\\tPL:'.$wesconf{platform}.'\\tLB:'.$wesconf{libraries}.'\\tSM:'.$pollo.'"';
 		$ptask{command} = "mkdir -p $tdir; mkdir -p $rdir\n";
 		$ptask{command} .= "$bwa -R ".$rg." $ref_fa $pollos{$pollo} $another | $gatk SortSam -I /dev/stdin -O $tdir/$pollo"."_sorted.bam --SORT_ORDER coordinate --CREATE_INDEX true  --TMP_DIR $tmp_shit\n";
 		$jid = send2slurm(\%ptask);
@@ -135,21 +131,22 @@ foreach my $pollo (sort keys %pollos){
 		$ptask{job_name} = $pollo.'_baseRecalibrator';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_baseRecalibrator.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_baseRecalibrator.out';
-		$ptask{command} = "$gatk BaseRecalibrator -I $tdir/$pollo"."_rmdups.bam -R $ref_fa -L $unions --known-sites $ref_dir/$known1 --known-sites $ref_dir/$known2 --known-sites $ref_dir/$dbsnp -O $rdir/$pollo"."_recal_data.table --TMP_DIR $tmp_shit\n";
+		my $unions = $wesconf{panel_dir}.'/'.$wesconf{unions};
+		$ptask{command} = "$gatk BaseRecalibrator -I $tdir/$pollo"."_rmdups.bam -R $ref_fa -L $unions --known-sites $ref_dir/$known1 --known-sites $ref_dir/$known2 --known-sites $ref_dir/$dbsnp -O $rdir/$pollo"."_recal_data.table\n";
 	      	$ptask{dependency} = "afterok:$jid";
 		$jid = send2slurm(\%ptask);
 		# ApplyBQSR, depende de BaseRecalibrator
 		$ptask{job_name} = $pollo.'_applyBQSR';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_applyBQSR.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_applyBQSR.out';
-		$ptask{command} = "$gatk ApplyBQSR -R $ref_fa -I $tdir/$pollo"."_rmdups.bam -L $unions -bqsr-recal-file $rdir/$pollo"."_recal_data.table -O $rdir/$pollo"."_recal.bam --TMP_DIR $tmp_shit\n";
+		$ptask{command} = "$gatk ApplyBQSR -R $ref_fa -I $tdir/$pollo"."_rmdups.bam -L $unions -bqsr-recal-file $rdir/$pollo"."_recal_data.table -O $rdir/$pollo"."_recal.bam\n";
 		$ptask{dependency} = "afterok:$jid";
 		$jid0 = send2slurm(\%ptask);
 		# AnalyzeCovariates, depende de BaseRecalibrator
 		$ptask{job_name} = $pollo.'_analyzeCovariates';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_analyzeCovariates.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_analyzeCovariates.out';
-		$ptask{command} = "$gatk AnalyzeCovariates -bqsr $rdir/$pollo"."_recal_data.table --plots $rdir/$pollo"."_AnalyzeCovariates.pdf --TMP_DIR $tmp_shit\n";
+		$ptask{command} = "$gatk AnalyzeCovariates -bqsr $rdir/$pollo"."_recal_data.table --plots $rdir/$pollo"."_AnalyzeCovariates.pdf\n";
 		$ptask{dependency} = "afterok:$jid";
 		my $jid1 = send2slurm(\%ptask);
 		push @ljobids, $jid1;
@@ -181,8 +178,8 @@ foreach my $pollo (sort keys %pollos){
 		$ptask{job_name} = $pollo.'_haplotypeCaller';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_haplotypeCaller.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_haplotypeCaller.out';
-		$ptask{command} = "$gatk HaplotypeCaller -R $ref_fa -L $unions -I $rdir/$pollo"."_recal.bam -G StandardAnnotation -G AS_StandardAnnotation -ERC GVCF --dbsnp $ref_dir/$dbsnp -O $rdir/$pollo"."_raw.snps.indels.g.vcf.gz --TMP_DIR $tmp_shit\n";
-		$ptask{command}.= "$gatk VariantEval -R $ref_fa -L $unions -D $ref_dir/$hcsnps -O $rdir/$pollo"."_eval.gatkreport --eval $rdir/$pollo"."_raw.snps.indels.g.vcf.gz --TMP_DIR $tmp_shit\n";
+		$ptask{command} = "$gatk HaplotypeCaller -R $ref_fa -L $unions -I $rdir/$pollo"."_recal.bam -G StandardAnnotation -G AS_StandardAnnotation -ERC GVCF --dbsnp $ref_dir/$dbsnp -O $rdir/$pollo"."_raw.snps.indels.g.vcf.gz\n";
+		$ptask{command}.= "$gatk VariantEval -R $ref_fa -L $unions -D $ref_dir/$hcsnps -O $rdir/$pollo"."_eval.gatkreport --eval $rdir/$pollo"."_raw.snps.indels.g.vcf.gz\n";
 		$ptask{dependency} = "afterok:$jid0";
 		$jid1 = send2slurm(\%ptask);
 		push @ljobids, $jid1;
