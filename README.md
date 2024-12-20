@@ -76,7 +76,7 @@ The scripts has also some basic optional input options for do some testing in yo
 
    * -i : the only compulsory option _-i project.init_, pointing where your init file is.
    * -c : especify a file with a subsebt of the subjects to analyze, run the script only on these subjects
-   * -m : optional especify if tha data is WGS (_ -m wgs _) or WES (default) 
+   * -m : optional especify if tha data is WGS (-m wgs) or WES (default) 
    * -g : for debugging pourposes, do not remove intermediate temporary files
    * -t : actually do not run nothing but create the full SLURM structure, usefull to inspect the slurm script that will be send into the cluster
 
