@@ -5,9 +5,24 @@ use File::Temp qw(:mktemp);
 use Spreadsheet::Write;
 use Statistics::Descriptive;
 use Data::Dump qw(dump);
+my %wesconf;
+my $init;
+while (@ARGV and $ARGV[0] =~ /^-/) {
+	$_ = shift;
+	last if /^--$/;
+	if (/^-i/) { $init = shift; chomp($init);}
+}
+die "Should supply init data file\n" unless $init;
+open IDF, "<$init";
+while (<IDF>){
+	if (/^#.*/ or /^\s*$/) { next; }
+	my ($n, $v) = /(\S*)\s*=\s*(\S*)/;
+	$wesconf{$n} = $v;
+}
+close IDF;
+my $ipath = $wesconf{src_dir};
+die "Should supply source data directory in init file\n" unless $ipath and -d $ipath;
 ############ Paths #######################################
-my $ipath = '/nas/Genomica/01-Data/02-WXS/02-Processed/202407_TS_EOAD-DEGESCO-R2/02-gVCF/';
-my $ldir = '02-gVCF';
 my $wgs_suffix = '_wgs_metrics.txt';
 my $raw_suffix = '_raw_wgs_metrics.txt';
 my $padded_suffix = '_padded_wgs_metrics.txt';
@@ -18,7 +33,7 @@ my @idirs = glob( $ipath.'*' );
 my @pollos; 
 foreach my $idir (@idirs) {         
 	if ( -d $idir and -d $idir.'/results') {                 
-		my ($pollo) = $idir =~ /.*\/$ldir\/(.*)$/;                 
+		my ($pollo) = $idir =~ /$ipath\/*(.*)$/;                 
 		push @pollos, $pollo;         
 	} 
 } 
@@ -285,8 +300,6 @@ $ofile = "contamination.xlsx";
 $workbook = Spreadsheet::Write->new(file => $ofile, sheet => 'Samples contamination');
 $workbook->addrow(['Sample','RawCoverage','Freemix','TiTvRatio','PCT_20x','PCT_30x','Comments']);
 foreach my $pollo (@pollos) {
-	if ($evals{$pollo}{'Freemix'} gt 0.05){
 		$workbook->addrow([$pollo,$evals{$pollo}{'RawCoverage'},$evals{$pollo}{'Freemix'},$evals{$pollo}{'tiTvRatio'}{'all'},$evals{$pollo}{'PCT_20x'},$evals{$pollo}{'PCT_30x'},'']);
-	}
 }
 $workbook->close();
