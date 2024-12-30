@@ -21,7 +21,7 @@ use Data::Dump qw(dump);
 my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/'; 
 my $ref_name = 'Homo_sapiens_assembly38'; 
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta'; 
-my $tmp_shit = $ENV{TMPDIR} || '/dorfl/user_data/'.$ENV{USER}.'/tmp/'; 
+my $tmp_shit = $ENV{TMPDIR}; 
 my $known1 = 'Homo_sapiens_assembly38.known_indels.vcf.gz';
 my $known2 = 'Mills_and_1000G_gold_standard.indels.hg38.vcf.gz';
 my $dbsnp = 'Homo_sapiens_assembly38.dbsnp138.vcf';
