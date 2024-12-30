@@ -21,7 +21,7 @@ use Data::Dump qw(dump);
 my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/'; 
 my $ref_name = 'Homo_sapiens_assembly38'; 
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta'; 
-my $tmp_shit = $ENV{TMPDIR} || '/ruby/'.$ENV{USER}.'/tmp/'; 
+my $tmp_shit = $ENV{TMPDIR} || '/dorfl/user_data/'.$ENV{USER}.'/tmp/'; 
 my $known1 = 'Homo_sapiens_assembly38.known_indels.vcf.gz';
 my $known2 = 'Mills_and_1000G_gold_standard.indels.hg38.vcf.gz';
 my $dbsnp = 'Homo_sapiens_assembly38.dbsnp138.vcf';
@@ -79,7 +79,7 @@ if ($cfile and -f $cfile) {
 	chomp (@plist = <$handle>);         
 	close $handle; 
 }
-my %ptask = (cpus => 8, time => '24:0:0', mem_per_cpu => '4G', debug => $test);
+my %ptask = (cpus => 8, time => ($mode  eq 'wgs')?'72:0:0':'24:0:0', mem_per_cpu => '4G', debug => $test);
 die "No such directory mate\n" unless -d $wesconf{src_dir};
 my @content = find(file => 'name' => "*$wesconf{search_pattern}", in => $wesconf{src_dir});
 my %pollos = map {/.*\/(\w+?)$wesconf{search_pattern}$/; $1 => $_} @content;
@@ -152,49 +152,67 @@ foreach my $pollo (sort keys %pollos){
 		$ptask{dependency} = "afterok:$jid";
 		my $jid1 = send2slurm(\%ptask);
 		push @ljobids, $jid1;
-		# CollectWGSMetrics, depende de ApplyBQSR
-		$ptask{cpus} = 4;
-		$ptask{job_name} = $pollo.'_collectRawMetrics';
-		$ptask{filename} = $slurmdir.'/'.$pollo.'_collectRawMetrics.sh';
-		$ptask{output} = $slurmdir.'/'.$pollo.'_collectRawMetrics.out';
-		$ptask{command} = "$gatk  DepthOfCoverage -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_raw_wgs_metrics.txt -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."--summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 30 --summary-coverage-threshold 40 --summary-coverage-threshold 50 --summary-coverage-threshold 60 --summary-coverage-threshold 70 --summary-coverage-threshold 80 --summary-coverage-threshold 90 --summary-coverage-threshold 100 --omit-depth-output-at-each-base true --omit-interval-statistics true --omit-locus-table true\n";
-		$ptask{dependency} = "afterok:$jid0";
-		$jid1 = send2slurm(\%ptask);
-		push @ljobids, $jid1;
-		$ptask{job_name} = $pollo.'_collectWgsMetrics';
-		$ptask{filename} = $slurmdir.'/'.$pollo.'_collectWgsMetrics.sh';
-		$ptask{output} = $slurmdir.'/'.$pollo.'_collectWgsMetrics.out';
-		$ptask{command} = "$gatk  DepthOfCoverage -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_wgs_metrics.txt -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."--summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 30 --summary-coverage-threshold 40 --summary-coverage-threshold 50 --summary-coverage-threshold 60 --summary-coverage-threshold 70 --summary-coverage-threshold 80 --summary-coverage-threshold 90 --summary-coverage-threshold 100 --omit-depth-output-at-each-base true --omit-interval-statistics true --omit-locus-table true --min-base-quality 20 -RF MappingQualityReadFilter --minimum-mapping-quality 20\n";
-		$ptask{dependency} = "afterok:$jid0";
-		$jid1 = send2slurm(\%ptask);
-		push @ljobids, $jid1;
-		$ptask{job_name} = $pollo.'_collectPaddedMetrics';
-		$ptask{filename} = $slurmdir.'/'.$pollo.'_collectPaddedMetrics.sh';
-		$ptask{output} = $slurmdir.'/'.$pollo.'_collectPaddedMetrics.out';
-		$ptask{command} = "$gatk  DepthOfCoverage -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_padded_wgs_metrics.txt -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."--summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 30 --summary-coverage-threshold 40 --summary-coverage-threshold 50 --summary-coverage-threshold 60 --summary-coverage-threshold 70 --summary-coverage-threshold 80 --summary-coverage-threshold 90 --summary-coverage-threshold 100 --omit-depth-output-at-each-base true --omit-interval-statistics true --omit-locus-table true -ip 100 --min-base-quality 20 -RF MappingQualityReadFilter --minimum-mapping-quality 20\n";
-		$ptask{dependency} = "afterok:$jid0";
-		$jid1 = send2slurm(\%ptask);
-		push @ljobids, $jid1;
+		unless ($mode eq 'wgs'){
+			# CollectWGSMetrics, depende de ApplyBQSR
+			$ptask{cpus} = 4;
+			$ptask{job_name} = $pollo.'_collectRawMetrics';
+			$ptask{filename} = $slurmdir.'/'.$pollo.'_collectRawMetrics.sh';
+			$ptask{output} = $slurmdir.'/'.$pollo.'_collectRawMetrics.out';
+			$ptask{command} = "$gatk  DepthOfCoverage -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_raw_wgs_metrics.txt -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."--summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 30 --summary-coverage-threshold 40 --summary-coverage-threshold 50 --summary-coverage-threshold 60 --summary-coverage-threshold 70 --summary-coverage-threshold 80 --summary-coverage-threshold 90 --summary-coverage-threshold 100 --omit-depth-output-at-each-base true --omit-interval-statistics true --omit-locus-table true\n";
+			$ptask{dependency} = "afterok:$jid0";
+			$jid1 = send2slurm(\%ptask);
+			push @ljobids, $jid1;
+			$ptask{job_name} = $pollo.'_collectWgsMetrics';
+			$ptask{filename} = $slurmdir.'/'.$pollo.'_collectWgsMetrics.sh';
+			$ptask{output} = $slurmdir.'/'.$pollo.'_collectWgsMetrics.out';
+			$ptask{command} = "$gatk  DepthOfCoverage -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_wgs_metrics.txt -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."--summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 30 --summary-coverage-threshold 40 --summary-coverage-threshold 50 --summary-coverage-threshold 60 --summary-coverage-threshold 70 --summary-coverage-threshold 80 --summary-coverage-threshold 90 --summary-coverage-threshold 100 --omit-depth-output-at-each-base true --omit-interval-statistics true --omit-locus-table true --min-base-quality 20 -RF MappingQualityReadFilter --minimum-mapping-quality 20\n";
+			$ptask{dependency} = "afterok:$jid0";
+			$jid1 = send2slurm(\%ptask);
+			push @ljobids, $jid1;
+			$ptask{job_name} = $pollo.'_collectPaddedMetrics';
+			$ptask{filename} = $slurmdir.'/'.$pollo.'_collectPaddedMetrics.sh';
+			$ptask{output} = $slurmdir.'/'.$pollo.'_collectPaddedMetrics.out';
+			$ptask{command} = "$gatk  DepthOfCoverage -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_padded_wgs_metrics.txt -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."--summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 30 --summary-coverage-threshold 40 --summary-coverage-threshold 50 --summary-coverage-threshold 60 --summary-coverage-threshold 70 --summary-coverage-threshold 80 --summary-coverage-threshold 90 --summary-coverage-threshold 100 --omit-depth-output-at-each-base true --omit-interval-statistics true --omit-locus-table true -ip 100 --min-base-quality 20 -RF MappingQualityReadFilter --minimum-mapping-quality 20\n";
+			$ptask{dependency} = "afterok:$jid0";
+			$jid1 = send2slurm(\%ptask);
+			push @ljobids, $jid1;
+		}else{
+			$ptask{cpus} = 4;
+			$ptask{job_name} = $pollo.'_collectWgsMetrics';
+			$ptask{filename} = $slurmdir.'/'.$pollo.'_collectWgsMetrics.sh';
+			$ptask{output} = $slurmdir.'/'.$pollo.'_collectWgsMetrics.out';
+			$ptask{command} = "$gatk CollectWgsMetrics -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_wgs_metrics.txt -R $ref_fa\n";
+			$ptask{dependency} = "afterok:$jid0";
+			$jid1 = send2slurm(\%ptask);
+			push @ljobids, $jid1;
+			$ptask{job_name} = $pollo.'_collectRawMetrics';
+			$ptask{filename} = $slurmdir.'/'.$pollo.'_collectRawMetrics.sh';
+			$ptask{output} = $slurmdir.'/'.$pollo.'_collectRawMetrics.out';
+			$ptask{command} = "$gatk CollectRawWgsMetrics -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_raw_wgs_metrics.txt -R $ref_fa\n";
+			$ptask{dependency} = "afterok:$jid0";
+			$jid1 = send2slurm(\%ptask);
+			push @ljobids, $jid1;
+		}
 		# HaplotypeCaller, depende de ApplyBQSR
 		$ptask{cpus} = 8;
 		$ptask{job_name} = $pollo.'_haplotypeCaller';
-		$ptask{filename} = $slurmdir.'/'.$pollo.'_haplotypeCaller.sh';
-		$ptask{output} = $slurmdir.'/'.$pollo.'_haplotypeCaller.out';
-		$ptask{command} = "$gatk HaplotypeCaller -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."-I $rdir/$pollo"."_recal.bam -G StandardAnnotation -G AS_StandardAnnotation -ERC GVCF --dbsnp $ref_dir/$dbsnp -O $rdir/$pollo"."_raw.snps.indels.g.vcf.gz\n";
-		$ptask{command}.= "$gatk VariantEval -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."-D $ref_dir/$hcsnps -O $rdir/$pollo"."_eval.gatkreport --eval $rdir/$pollo"."_raw.snps.indels.g.vcf.gz\n";
-		$ptask{dependency} = "afterok:$jid0";
-		$jid1 = send2slurm(\%ptask);
-		push @ljobids, $jid1;
-		# Clean tmp files for subject
-		$ptask{job_name} = $pollo.'_closeSubject';
-		$ptask{filename} = $slurmdir.'/'.$pollo.'_closeSubject.sh';
-		$ptask{output} = $slurmdir.'/'.$pollo.'_closeSubject.out';
-		$ptask{dependency} = 'afterok:'.join(',afterok:', @ljobids);
-		$ptask{command} = $debug?":\n":"rm -rf $tdir\n";
-		my $fjob = send2slurm(\%ptask);
-		push @jobs, $fjob;
-	}
-}
+		$ptask{filename} = $slurmdir.'/'.$pollo.'_haplotypeCaller.sh'; 
+		$ptask{output} = $slurmdir.'/'.$pollo.'_haplotypeCaller.out'; 
+		$ptask{command} = "$gatk HaplotypeCaller -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."-I $rdir/$pollo"."_recal.bam -G StandardAnnotation -G AS_StandardAnnotation -ERC GVCF --dbsnp $ref_dir/$dbsnp -O $rdir/$pollo"."_raw.snps.indels.g.vcf.gz\n"; 
+		$ptask{command}.= "$gatk VariantEval -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."-D $ref_dir/$hcsnps -O $rdir/$pollo"."_eval.gatkreport --eval $rdir/$pollo"."_raw.snps.indels.g.vcf.gz\n"; 
+		$ptask{dependency} = "afterok:$jid0"; 
+		$jid1 = send2slurm(\%ptask); 
+		push @ljobids, $jid1; 
+		# Clean tmp files for subject 
+		$ptask{job_name} = $pollo.'_closeSubject'; 
+		$ptask{filename} = $slurmdir.'/'.$pollo.'_closeSubject.sh'; 
+		$ptask{output} = $slurmdir.'/'.$pollo.'_closeSubject.out'; 
+		$ptask{dependency} = 'afterok:'.join(',afterok:', @ljobids); 
+		$ptask{command} = $debug?":\n":"rm -rf $tdir\n"; 
+		my $fjob = send2slurm(\%ptask); 
+		push @jobs, $fjob; 
+	} 
+} 
 unless ($test) {
 	my %wtask = (cpus => 1, job_name => 'end_wes', filename => $slurmdir.'/end.sh', output => $slurmdir.'/end.out', dependency => 'afterok:'.join(',afterok:',@jobs));
 	send2slurm(\%wtask);

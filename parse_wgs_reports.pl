@@ -20,12 +20,11 @@ while (<IDF>){
 	$wesconf{$n} = $v;
 }
 close IDF;
-my $ipath = $wesconf{src_dir};
+my $ipath = $wesconf{src_dir}.'/';
 die "Should supply source data directory in init file\n" unless $ipath and -d $ipath;
 ############ Paths #######################################
 my $wgs_suffix = '_wgs_metrics.txt';
 my $raw_suffix = '_raw_wgs_metrics.txt';
-my $padded_suffix = '_padded_wgs_metrics.txt';
 my $eval_suffix = '_eval.gatkreport';
 my $freemix_suffix = '.vbid2.selfSM';
 ############ Busca las muestras  ######################### 
@@ -40,13 +39,11 @@ foreach my $idir (@idirs) {
 my %evals;
 ################ Lee los reports #####################################
 foreach my $pollo (@pollos) {
-	my $ifile = $ipath.$pollo.'/results/'.$pollo.$raw_suffix.'.sample_summary';
+	my $ifile = $ipath.$pollo.'/results/'.$pollo.$raw_suffix;
 	open IDF, "<$ifile";
 	while (<IDF>){
-		#sample_id,total,mean,granular_third_quartile,granular_median,granular_first_quartile,%_bases_above_10,%_bases_above_15,%_bases_above_20,%_bases_above_30,%_bases_above_40,%_bases_above_50,%_bases_above_60,%_bases_above_70,%_bases_above_80,%_bases_above_90,%_bases_above_100
-		#22D28227621,7340059881,167.12,203,167,130,99.1,99.0,98.8,98.5,98.1,97.8,97.3,96.4,94.9,92.7,89.6
-		if (/^$pollo.*/){
-			my ($coverage, $pct10, $pct20, $pct30, $pct40, $pct50, $pct60, $pct70, $pct80, $pct90, $pct100) = /^$pollo,\d+,(\d+\.\d+),\d+,\d+,\d+,(\d+\.\d+),\d+\.\d+,(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+)$/;
+		if (/^\d{6,12}\s+.*/){
+			my ($coverage, $pct10, $pct20, $pct30, $pct40, $pct50, $pct60, $pct70, $pct80, $pct90, $pct100) = /^\d+\s+(\d+\.\d+)\s+\d+\.\d+\s+\d+\s+\d+\s+\d+\.\d+\s+\d+\s+\d+\.\d+\s+\d+\.\d+\s+\d+\.\d+\s+\d+\.\d+\s+\d+\.\d+\s+\d+\.\d+\s+\d+\.\d+\s+(\d+\.\d+)\s+\d+\.\d+\s+(\d+\.\d+)\s+\d+\.\d+\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+).*$/;
 			$evals{$pollo}{'RawCoverage'} = $coverage;
 			$evals{$pollo}{'PCT_10x'} = $pct10;
 			$evals{$pollo}{'PCT_20x'} = $pct20;
@@ -58,25 +55,16 @@ foreach my $pollo (@pollos) {
 			$evals{$pollo}{'PCT_80x'} = $pct80;
 			$evals{$pollo}{'PCT_90x'} = $pct90;
 			$evals{$pollo}{'PCT_100x'} = $pct100;
+			last;
 		}
 	}
 	close IDF;
-	$ifile = $ipath.$pollo.'/results/'.$pollo.$wgs_suffix.'.sample_summary';
+	$ifile = $ipath.$pollo.'/results/'.$pollo.$wgs_suffix;
 	open IDF, "<$ifile";
 	while (<IDF>){
-		if (/^$pollo.*/){
-			my ($rcoverage) = /^$pollo,\d+,(\d+\.\d+),.*/;
+		if (/^\d{6,12}\s+.*/){
+			my ($rcoverage) = /^\d+\s+(\d+\.\d+)\s+.*/;
 		 	$evals{$pollo}{'MeanCoverage'} = $rcoverage;
-		}
-	}
-	close IDF;
-
-	$ifile = $ipath.$pollo.'/results/'.$pollo.$padded_suffix.'.sample_summary';
-	open IDF, "<$ifile";
-	while (<IDF>){
-		if (/^$pollo.*/){
-			my ($rcoverage) = /^$pollo,\d+,(\d+\.\d+),.*/;
-		 	$evals{$pollo}{'PaddedCoverage'} = $rcoverage;
 		}
 	}
 	close IDF;
@@ -116,11 +104,10 @@ foreach my $pollo (@pollos) {
 ##################################### Escribe archivos finales en varios formatos ###################################
 my $ofile0 = 'report_all.csv';
 open ODF, ">$ofile0";
-print ODF "Sample,RawCoverage,MeanCoverage,PaddedCoverage,PCT_10x,PCT_20x,PCT_30x,PCT_40x,PCT_50x,PCT_60x,PCT_70x,PCT_80x,PCT_90x,PCT_100x,dbSNP_nSNPs_all,dbSNP_nSNPs_known,dbSNP_nSNPs_novel,dbSNP_nInsertions_all,dbSNP_nInsertions_known,dbSNP_nInsertions_novel,dbSNP_nDeletions_all,dbSNP_nDeletions_known,dbSNP_nDeletions_novel,tiTvRatio_all,tiTvRatio_known,tiTvRatio_novel,Freemix\n";
+print ODF "Sample,RawCoverage,MeanCoverage,PCT_10x,PCT_20x,PCT_30x,PCT_40x,PCT_50x,PCT_60x,PCT_70x,PCT_80x,PCT_90x,PCT_100x,dbSNP_nSNPs_all,dbSNP_nSNPs_known,dbSNP_nSNPs_novel,dbSNP_nInsertions_all,dbSNP_nInsertions_known,dbSNP_nInsertions_novel,dbSNP_nDeletions_all,dbSNP_nDeletions_known,dbSNP_nDeletions_novel,tiTvRatio_all,tiTvRatio_known,tiTvRatio_novel,Freemix\n";
 foreach my $pollo (@pollos) {
 	print ODF "$pollo,$evals{$pollo}{'RawCoverage'},";
 	print ODF "$evals{$pollo}{'MeanCoverage'},";
-	print ODF "$evals{$pollo}{'PaddedCoverage'},";
 	print ODF "$evals{$pollo}{'PCT_10x'},";
 	print ODF "$evals{$pollo}{'PCT_20x'},";
 	print ODF "$evals{$pollo}{'PCT_30x'},";
@@ -157,13 +144,12 @@ close ODF;
 
 my $ofile1 = 'report_all.xlsx';
 my $workbook = Spreadsheet::Write->new(file => $ofile1, sheet => 'DATA');
-$workbook->addrow(['Sample','RawCoverage','MeanCoverage','PaddedCoverage','PCT_10x','PCT_20x','PCT_30x','PCT_40x','PCT_50x','PCT_60x','PCT_70x','PCT_80x','PCT_90x','PCT_100x','dbSNP_nSNPs_all','dbSNP_nSNPs_known','dbSNP_nSNPs_novel','dbSNP_nInsertions_all','dbSNP_nInsertions_known','dbSNP_nInsertions_novel','dbSNP_nDeletions_all','dbSNP_nDeletions_known','dbSNP_nDeletions_novel','tiTvRatio_all','tiTvRatio_known','tiTvRatio_novel','Freemix']);
+$workbook->addrow(['Sample','RawCoverage','MeanCoverage','PCT_10x','PCT_20x','PCT_30x','PCT_40x','PCT_50x','PCT_60x','PCT_70x','PCT_80x','PCT_90x','PCT_100x','dbSNP_nSNPs_all','dbSNP_nSNPs_known','dbSNP_nSNPs_novel','dbSNP_nInsertions_all','dbSNP_nInsertions_known','dbSNP_nInsertions_novel','dbSNP_nDeletions_all','dbSNP_nDeletions_known','dbSNP_nDeletions_novel','tiTvRatio_all','tiTvRatio_known','tiTvRatio_novel','Freemix']);
 foreach my $pollo (@pollos) {
 	my @datarow;
 	push @datarow, $pollo;
 	push @datarow, $evals{$pollo}{'RawCoverage'};
 	push @datarow, $evals{$pollo}{'MeanCoverage'};
-	push @datarow, $evals{$pollo}{'PaddedCoverage'};
 	push @datarow, $evals{$pollo}{'PCT_10x'};
 	push @datarow, $evals{$pollo}{'PCT_20x'};
 	push @datarow, $evals{$pollo}{'PCT_30x'};
@@ -188,7 +174,7 @@ my $cfile = mktemp($ENV{TMPDIR}.'/coverage.XXXXXXX');
 open ODF, ">$cfile";
 print ODF "Sample,Type,Coverage\n";
 foreach my $pollo (@pollos) {
-	foreach my $kind ('RawCoverage', 'MeanCoverage', 'PaddedCoverage'){
+	foreach my $kind ('RawCoverage', 'MeanCoverage'){
 		print ODF "$pollo,$kind,$evals{$pollo}{$kind}\n";
 	}
 }
@@ -229,7 +215,7 @@ open RSF, ">$rmark";
 		push @frm, $evals{$pollo}{'Freemix'};
 		$ffrm++ if ($evals{$pollo}{'Freemix'} gt 0.05);
 		push @titv, $evals{$pollo}{'tiTvRatio'}{'all'};
-		$ftitv++ if (($evals{$pollo}{'tiTvRatio'}{'all'} lt 3.0) or ($evals{$pollo}{'tiTvRatio'}{'all'} gt 3.3));
+		$ftitv++ if (($evals{$pollo}{'tiTvRatio'}{'all'} lt 2.0) or ($evals{$pollo}{'tiTvRatio'}{'all'} gt 2.1));
 	}
 	my $src = Statistics::Descriptive::Full->new();
 	$src->add_data(@rc);	
@@ -239,7 +225,7 @@ open RSF, ">$rmark";
 	print RSF "|Freemix|".sprintf("%.3f",$srm->mean())."|".sprintf("%.3f",$srm->standard_deviation())."|".sprintf("%.3f",$srm->min())."|".sprintf("%.3f",$srm->max())."|>0.05|".sprintf("%d",$ffrm)."|\n";
 	my $stt = Statistics::Descriptive::Full->new();
 	$stt->add_data(@titv);
-	print RSF "|dbSNP TiTv Ratio|".sprintf("%.2f",$stt->mean())."|".sprintf("%.2f",$stt->standard_deviation())."|".sprintf("%.2f",$stt->min())."|".sprintf("%.2f",$stt->max())."|<3.0 Or >3.3|".sprintf("%d",$ftitv)."|\n";	
+	print RSF "|dbSNP TiTv Ratio|".sprintf("%.2f",$stt->mean())."|".sprintf("%.2f",$stt->standard_deviation())."|".sprintf("%.2f",$stt->min())."|".sprintf("%.2f",$stt->max())."|<2.0 Or >2.1|".sprintf("%d",$ftitv)."|\n";	
 	print RSF "## Descriptive Plots\n";
 	print RSF '```{r warning = FALSE}'."\n";
 	print RSF "library(ggplot2)\n";
