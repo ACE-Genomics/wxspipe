@@ -69,15 +69,15 @@ platform = ILLUMINA
 libraries = NGS
 ```
 You should respect the name of variables in this file since the scripts depend on them. Then you find the script that suits your needs and try it! Notice that every script will need an independent _init_ file since the output directory of one could be the source directory of the next. 
-This info needs to be edited carefully for any step. However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the _panel\_dir_ variable do not apply for the script but is OK if you leave there, since is silently ignored by the script.
+This info needs to be edited carefully for any step. However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the *panel\_dir* variable do not apply for the script but is OK if you leave there, since is silently ignored by the script.
 
 ### Some options
 
 The scripts has also some basic optional input options for do some testing in your sample,
 
-   * -i : the only compulsory option _-i project.init_, pointing where your init file is.
+   * -i : the only compulsory option *-i project.init*, pointing where your init file is.
    * -c : especify a file with a subsebt of the subjects to analyze, run the script only on these subjects
-   * -m : optional especify if tha data is WGS (-m wgs) or WES (default) 
+   * -m : optional especify if tha data is WGS (*-m wgs*) or WES (*default*) 
    * -g : for debugging pourposes, do not remove intermediate temporary files
    * -t : actually do not run nothing but create the full SLURM structure, usefull to inspect the slurm script that will be send into the cluster
 
