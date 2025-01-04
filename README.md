@@ -1,8 +1,8 @@
 # WESpipe
 
-Parallel processing for whole exome sequencing (WES) pipeline. [Why in Perl?](https://xkcd.com/224/)
+Parallel processing for whole exome sequencing (WES) or whiole genome sequencing (WGS) pipeline. [Why in Perl?](https://xkcd.com/224/)
 
-![Individual WES pipeline](wes_pipe.png)
+![Individual WXS pipeline](wes_pipe.png)
 
 ## Before you go
 
@@ -13,15 +13,16 @@ curl -sL https://raw.githubusercontent.com/asqwerty666/wespipe/refs/heads/main/i
 ```
 ## scripts
 
-The whole project are some scripts that use GATK and other tools to run WES pipeline. 
+The whole project are some scripts that use GATK and other tools to run WXS pipeline. 
 
    * fasta2cram.pl : Transform FASTA files to aligned HG38 CRAM files
-   * fasta2vcf.pl : Launch WES pipeline from FASTA to gVCF files
+   * fasta2vcf.pl : Launch WXS pipeline from FASTA to gVCF files
    * realign.pl : Realign BAM files from B37 to HG38
-   * bam2vcf.pl : Launch WES pipeline from BAM (or CRAM) to gVCF files
+   * bam2vcf.pl : Launch WXS pipeline from BAM (or CRAM) to gVCF files
    * vcfjoint.pl : Make a joint call from gVCF files
-   * parse\_reports.pl : Parse the QC files and make a report
-   * wtf\_tranches.pl : Help to inspect joint call tranches
+   * parse\_wes\_reports.pl : Parse the WES QC files and make a report
+   * parse\_wgs\_reports.pl : Parse the WGS QC files and make a report
+   * wtf\_tranches.pl : Help to inspect joint call tranches (beta prototype)
 
 ## GET your references
 
@@ -35,7 +36,7 @@ and remember to index all the ref vcf files,
 while read -r vcf; do gatk IndexFeatureFile -I ${vcf}; done < toindex.txt
 ```
 
-So far is all ready to run the WES pipeline.
+So far is all ready to run the WXS pipeline.
 
 ## Just go
 
@@ -74,7 +75,7 @@ This info needs to be edited carefully for any step. However, it is OK if you le
 
 The scripts has also some basic optional input options for do some testing in your sample,
 
-   * -i : the only compulsory option _-i project.init_, pointing where your init file is.
+   * -i : the only compulsory option i_-i project.init_, pointing where your init file is.
    * -c : especify a file with a subsebt of the subjects to analyze, run the script only on these subjects
    * -m : optional especify if tha data is WGS (-m wgs) or WES (default) 
    * -g : for debugging pourposes, do not remove intermediate temporary files

@@ -19,7 +19,7 @@ use Data::Dump qw(dump);
 my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/';
 my $ref_name = 'Homo_sapiens_assembly38';
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta';
-my $tmp_shit = $ENV{TMPDIR} || '/ruby/'.$ENV{USER}.'/tmp/';
+my $tmp_shit = $ENV{TMPDIR};
 #
 # Executable Paths
 #
@@ -27,7 +27,7 @@ my $fastqc = '/nas/usr/local/bin/fastqc';
 my $bwa = '/nas/usr/local/bin/bwa mem -t 4 -M';
 my $samtools = '/nas/software/samtools/bin/samtools';
 my $verifyBamID = '/nas/usr/local/bin/verifyBamID';
-my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /the_dysk:/the_dysk /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"';
+my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"';
 my $snpEff = 'java -Xmx8g -jar /nas/software/snpEff/snpEff.jar';
 #
 # Get CLI inputs

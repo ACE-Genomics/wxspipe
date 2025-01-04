@@ -35,8 +35,8 @@ my $fastqc = '/nas/usr/local/bin/fastqc';
 my $bwa = '/nas/usr/local/bin/bwa mem -t 4 -M'; 
 my $samtools = '/nas/software/samtools/bin/samtools'; 
 my $verifyBamID = '/nas/usr/local/bin/verifyBamID'; 
-my $freemix = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /the_dysk:/the_dysk /nas/usr/local/opt/singularity/freemix.simg VerifyBamID --SVDPrefix /scripts/1000g.phase3.10k.b38.exome.vcf.gz.dat --NumThread 8 --max-depth 1000 --DisableSanityCheck';
-my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /the_dysk:/the_dysk /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"'; 
+my $freemix = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/singularity/freemix.simg VerifyBamID --SVDPrefix /scripts/1000g.phase3.10k.b38.exome.vcf.gz.dat --NumThread 8 --max-depth 1000 --DisableSanityCheck';
+my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"'; 
 my $snpEff = 'java -Xmx8g -jar /nas/software/snpEff/snpEff.jar';
 # 
 #

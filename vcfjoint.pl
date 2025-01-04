@@ -21,7 +21,7 @@ use Data::Dump qw(dump);
 my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/';
 my $ref_name = 'Homo_sapiens_assembly38';
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta';
-my $tmp_shit = $ENV{TMPDIR} || '/ruby/'.$ENV{USER}.'/tmp/';
+my $tmp_shit = $ENV{TMPDIR};
 my $known1 = 'Homo_sapiens_assembly38.known_indels.vcf.gz';
 my $known2 = 'Mills_and_1000G_gold_standard.indels.hg38.vcf.gz';
 my $dbsnp = 'Homo_sapiens_assembly38.dbsnp138.vcf';
@@ -32,7 +32,7 @@ my @chrs = (1 .. 22, "X", "Y");
 #
 # Executable Paths
 #
-my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /the_dysk:/the_dysk /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"';
+my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"';
 # 
 # 
 # Get CLI inputs
