@@ -9,7 +9,7 @@ use SLURMACE;
 use File::Find::Rule;
 use File::Basename;
 use Cwd;
-require 'wgsInit.pm'; 
+require 'wxsInit.pm'; 
 ############################################# 
 # See: 
 #   - For WES pipeline: http://detritus.fundacioace.com/wiki/doku.php?id=genetica:wes 
