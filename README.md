@@ -11,6 +11,15 @@ This scripts use SLURMACE library. To install it just run the *install\_slurmace
 ```bash
 curl -sL https://raw.githubusercontent.com/asqwerty666/wespipe/refs/heads/main/install_slurmace.sh | bash
 ```
+
+Also, the scripts should work as is, after you modify the paths inside *wxsInit.pm* according to your system. But is even better if you move the module *wxsInit.pm* to your local perl library directory and modify the scripts doing,
+
+```bash
+sed "s/require 'wxsInit\.pm';/use wxsInit;/" *.pl
+```
+
+guaranteeing that you local reference data and executable paths are found.
+
 ## scripts
 
 The whole project is just a bunch of scripts that use GATK and other tools to run WXS pipeline. 
