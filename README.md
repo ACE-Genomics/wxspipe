@@ -44,23 +44,23 @@ Now you are ready to go but first you will need to create/edit an init file, tha
 
 ```
 # Source dir of FASTA or CRAM files 
-src\_dir = /home/Genomics/Data/Raw.data/Myproject/FASTA/ 
+src_dir = /home/Genomics/Data/Raw.data/Myproject/FASTA/ 
 # Directory containing BAIT and TARGET interval lists 
-panel\_dir = /home/Genomics/Data/Reference/Myproject/
+panel_dir = /home/Genomics/Data/Reference/Myproject/
 # BAIT intervals 
-baits = Exome\_RefSeq\_baits.interval\_list 
+baits = Exome_RefSeq_baits.interval_list 
 # TARGET intervals 
-targets = Exome\_RefSeq\_targets.interval\_list 
+targets = Exome_RefSeq_targets.interval_list 
 # BAIT + TARGET intervals. You really need only this one. If in doubt, put BAIT and TARGET same 
-unions = Exome\_RefSeq\_unions.interval\_list 
+unions = Exome_RefSeq_unions.interval_list 
 # BAIT + TARGET bed file. Usually the original where the interval lists come from (not sure if needed) 
-union\_bed = Exome\_RefSeq\_hg38.bed 
+union_bed = Exome_RefSeq_hg38.bed 
 # Output directory. Where your results will be stored 
 outdir = /home/osotolongo/wes/output 
 # Search pattern for FASTA or CRAM files. Actually the part that is different from first and second fasta 
-search\_pattern = \_1.fastq.gz 
+search_pattern = _1.fastq.gz 
 # Pattern for the second FASTA 
-alt\_pattern = \_2.fastq.gz 
+alt_pattern = _2.fastq.gz 
 # Pattern for excluding files. Do not process files with this string in the path 
 cleaner = call 
 # Identifier for the platform of adquisition 
