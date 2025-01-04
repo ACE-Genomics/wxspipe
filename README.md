@@ -75,7 +75,7 @@ This info needs to be edited carefully for any step. However, it is OK if you le
 
 The scripts has also some basic optional input options for do some testing in your sample,
 
-   * -i : the only compulsory option i_-i project.init_, pointing where your init file is.
+   * -i : the only compulsory option _-i project.init_, pointing where your init file is.
    * -c : especify a file with a subsebt of the subjects to analyze, run the script only on these subjects
    * -m : optional especify if tha data is WGS (-m wgs) or WES (default) 
    * -g : for debugging pourposes, do not remove intermediate temporary files
