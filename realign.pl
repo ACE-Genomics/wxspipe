@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use SLURMACE;
-use Data::Dump qw(dump);
+require 'wxsInit.pm';
 #############################################
 # See:
 #   - For WES pipeline: http://detritus.fundacioace.com/wiki/doku.php?id=genetica:wes
@@ -16,19 +16,19 @@ use Data::Dump qw(dump);
 #
 # Data Paths
 #
-my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/';
-my $ref_name = 'Homo_sapiens_assembly38';
+my %dpaths = data_paths();
+my $ref_dir = $dpaths{ref_dir};
+my $ref_name = $dpaths{ref_name};
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta';
 my $tmp_shit = $ENV{TMPDIR};
 #
 # Executable Paths
 #
-my $fastqc = '/nas/usr/local/bin/fastqc';
-my $bwa = '/nas/usr/local/bin/bwa mem -t 4 -M';
-my $samtools = '/nas/software/samtools/bin/samtools';
-my $verifyBamID = '/nas/usr/local/bin/verifyBamID';
-my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"';
-my $snpEff = 'java -Xmx8g -jar /nas/software/snpEff/snpEff.jar';
+my %epaths = exec_paths(); 
+my $fastqc = $epaths{fastqc};
+my $bwa = $epaths{bwa};
+my $samtools = $epaths{samtools};
+my $gatk = $epaths{gatk};
 #
 # Get CLI inputs
 #
@@ -36,7 +36,6 @@ my $cfile;
 my $debug = 0;
 my $test = 0;
 my $init; 
-my %wesconf;
 while (@ARGV and $ARGV[0] =~ /^-/) {
 	$_ = shift;
 	last if /^--$/;
@@ -45,6 +44,7 @@ while (@ARGV and $ARGV[0] =~ /^-/) {
 	if (/^-g/) { $debug = 1;}
 	if (/^-t/) { $test = 1;}
 }
+my %wesconf = init_conf($init);
 mkdir $wesconf{outdir} unless -d $wesconf{outdir};
 my $slurmdir = $wesconf{outdir}.'/slurm';
 mkdir $slurmdir unless -d $slurmdir;
@@ -69,7 +69,7 @@ my %cdata = (cpus => 4, time => '24:0:0', mem_per_cpu => '4G', debug => $test);
 my @jobs;
 foreach my $pollo (@mlist){
 	my $tmpdir = $tmp_shit.'/'.$pollo;
-	my @inqs = split "\n", qx"samtools view -H $wesconf{src_dir}/$pollo/$pollo.bam";
+	my @inqs = split "\n", qx"$samtools view -H $wesconf{src_dir}/$pollo/$pollo.bam";
 	my %params;
 	foreach my $inq (@inqs){
 	       if( $inq	=~ /^\@RG.*/){
@@ -85,7 +85,7 @@ foreach my $pollo (@mlist){
 	$cdata{command}.= "$gatk SortSam -I $tmpdir/$pollo"."_u.bam -O $tmpdir/$pollo"."_us.bam -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
 	$cdata{command}.= "$gatk SamToFastq -I $tmpdir/$pollo.bam -FASTQ $tmpdir/$pollo"."_a.fastq -F2 $tmpdir/$pollo"."_b.fastq -R $ref_fa\n";
 	$cdata{command}.= "$bwa -R \"\@RG\\tID:$params{ID}\\tPL:$params{PL}\\tLB:$params{LB}\\tSM:$params{SM}\" $ref_fa $tmpdir/$pollo"."_a.fastq $tmpdir/$pollo"."_b.fastq > $tmpdir/$pollo"."_alignment.sam\n";
-	$cdata{command}.= "$gatk  SortSam -I $tmpdir/$pollo"."_alignment.sam -O $tmpdir/$pollo"."_salignment.sam  -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
+	$cdata{command}.= "$gatk SortSam -I $tmpdir/$pollo"."_alignment.sam -O $tmpdir/$pollo"."_salignment.sam  -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
 	$cdata{command}.= "$gatk MergeBamAlignment -ALIGNED $tmpdir/$pollo"."_salignment.sam -UNMAPPED $tmpdir/$pollo"."_us.bam -R $ref_fa -O $tmpdir/$pollo"."_merged.bam\n";
 	$cdata{command}.= "$gatk AddOrReplaceReadGroups -I  $tmpdir/$pollo"."_merged.bam -O $wesconf{outdir}/$pollo.sam -ID $params{ID} -PL $params{PL} -LB $params{LB} -PU $params{ID} -SM $params{SM}\n";
 	$cdata{command}.= "rm -rf $tmpdir\n" unless $debug;

@@ -9,7 +9,7 @@ use SLURMACE;
 use File::Find::Rule;
 use File::Basename;
 use Cwd;
-use Data::Dump qw(dump); 
+require 'wxsInit.pm'; 
 ############################################# 
 # See: 
 #   - For WES pipeline: http://detritus.fundacioace.com/wiki/doku.php?id=genetica:wes 
@@ -18,27 +18,27 @@ use Data::Dump qw(dump);
 #
 #
 # Data Paths 
-# 
-my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/'; 
-my $ref_name = 'Homo_sapiens_assembly38'; 
+#
+my %dpaths = data_paths(); 
+my $ref_dir = $dpaths{ref_dir}; 
+my $ref_name = $dpaths{ref_name}; 
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta'; 
 my $tmp_shit = $ENV{TMPDIR}; 
-my $known1 = 'Homo_sapiens_assembly38.known_indels.vcf.gz';
-my $known2 = 'Mills_and_1000G_gold_standard.indels.hg38.vcf.gz';
-my $dbsnp = 'Homo_sapiens_assembly38.dbsnp138.vcf';
-my $hcsnps = '1000G_phase1.snps.high_confidence.hg38.vcf.gz';
+my $known1 = $dpaths{known1}; 
+my $known2 = $dpaths{known2}; 
+my $dbsnp = $dpaths{dbsnp}; 
+my $hcsnps = $dpaths{hcsnps};
 # 
 #
 # Executable Paths 
 #
 #
-my $fastqc = '/nas/usr/local/bin/fastqc'; 
-my $bwa = '/nas/usr/local/bin/bwa mem -t 4 -M'; 
-my $samtools = '/nas/software/samtools/bin/samtools'; 
-my $verifyBamID = '/nas/usr/local/bin/verifyBamID'; 
-my $freemix = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/singularity/freemix.simg VerifyBamID --SVDPrefix /scripts/1000g.phase3.10k.b38.exome.vcf.gz.dat --NumThread 8 --max-depth 1000 --DisableSanityCheck';
-my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"'; 
-my $snpEff = 'java -Xmx8g -jar /nas/software/snpEff/snpEff.jar';
+my %epaths = exec_paths(); 
+my $fastqc = $epaths{fastqc}; 
+my $bwa = $epaths{bwa}; 
+my $samtools = $epaths{samtools}; 
+my $freemix = $epaths{freemix}; 
+my $gatk = $epaths{gatk};
 # 
 #
 # 
@@ -47,7 +47,6 @@ my $snpEff = 'java -Xmx8g -jar /nas/software/snpEff/snpEff.jar';
 #
 my $cfile; 
 my $init;
-my %wesconf;
 my $mode = 'wes';
 my $debug = 0; 
 my $test = 0; 
@@ -61,13 +60,7 @@ while (@ARGV and $ARGV[0] =~ /^-/) {
 	if (/^-t/) { $test = 1;}         
 } 
 die "Should supply init data file\n" unless $init;
-open IDF, "<$init";
-while (<IDF>){         
-	if (/^#.*/ or /^\s*$/) { next; }         
-	my ($n, $v) = /(\S*)\s*=\s*(\S*)/;         
-	$wesconf{$n} = $v; 
-} 
-close IDF;
+my %wesconf = init_conf($init);
 my $workdir = getcwd;
 $wesconf{outdir} = $workdir.'/output' unless $wesconf{outdir};
 mkdir $wesconf{outdir} unless -d $wesconf{outdir};
@@ -149,7 +142,7 @@ foreach my $pollo (sort keys %pollos){
 		$ptask{job_name} = $pollo.'_collectRawMetrics';
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_collectRawMetrics.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_collectRawMetrics.out';
-		$ptask{command} = "$gatk  DepthOfCoverage -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_raw_wgs_metrics.txt -R $ref_fa".(($mode eq 'wgs')?' '." -L $unions ")."--summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 30 --summary-coverage-threshold 40 --summary-coverage-threshold 50 --summary-coverage-threshold 60 --summary-coverage-threshold 70 --summary-coverage-threshold 80 --summary-coverage-threshold 90 --summary-coverage-threshold 100 --omit-depth-output-at-each-base true --omit-interval-statistics true --omit-locus-table true\n";
+		$ptask{command} = "$gatk  DepthOfCoverage -I $rdir/$pollo"."_recal.bam -O $rdir/$pollo"."_raw_wgs_metrics.txt -R $ref_fa".(($mode eq 'wgs')?' ':" -L $unions ")."--summary-coverage-threshold 10 --summary-coverage-threshold 15 --summary-coverage-threshold 20 --summary-coverage-threshold 30 --summary-coverage-threshold 40 --summary-coverage-threshold 50 --summary-coverage-threshold 60 --summary-coverage-threshold 70 --summary-coverage-threshold 80 --summary-coverage-threshold 90 --summary-coverage-threshold 100 --omit-depth-output-at-each-base true --omit-interval-statistics true --omit-locus-table true\n";
 		$ptask{dependency} = "afterok:$jid0";
 		$jid1 = send2slurm(\%ptask);
 		push @ljobids, $jid1;

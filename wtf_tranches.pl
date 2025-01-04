@@ -3,25 +3,24 @@ use strict;
 use warnings;
 use SLURMACE qw(send2slurm wait4jobs);
 use Cwd;
-my $init; my %wesconf;
+require 'wxsInit.pm';
+my $init;
 while (@ARGV and $ARGV[0] =~ /^-/) {
 	$_ = shift;
 	last if /^--$/;
 	if (/^-i/) { $init = shift; chomp($init);}
 }
 die "Should supply init data file\n" unless $init;
-open IDF, "<$init";
-while (<IDF>){
-	if (/^#.*/ or /^\s*$/) { next; }
-	my ($n, $v) = /(\S*)\s*=\s*(\S*)/;
-	$wesconf{$n} = $v;
-}
-close IDF;
+my %wesconf = init_conf($init);
 my $base_dir = $wesconf{src_dir};
 die "Should supply source data directory in init file\n" unless $base_dir and -d $base_dir;
 my $wdir =  $wesconf{outdir} || cwd();
-my $GATK = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"';
-my $ref = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/Homo_sapiens_assembly38.fasta';
+my %epaths = exec_paths();
+my $GATK = $epaths{gatk};
+my %dpaths = data_paths();
+my $ref_dir = $dpaths{ref_dir};
+my $ref_name = $dpaths{ref_name};
+my $ref = $ref_dir.'/'.$ref_name.'.fasta';
 my @tranches = (100.0, 99.95, 99.9, 99.5, 99.0, 97.0, 96.0, 95.0, 94.0, 93.5, 93.0, 92.0, 91.0, 90.0);
 my $sdir = $wdir.'/slurm';
 my $tables_dir = $wdir.'/tables';

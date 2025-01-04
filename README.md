@@ -1,6 +1,6 @@
 # WESpipe
 
-Parallel processing for whole exome sequencing (WES) or whiole genome sequencing (WGS) pipeline. [Why in Perl?](https://xkcd.com/224/)
+Parallel processing for whole exome sequencing (WES) or whole genome sequencing (WGS) pipeline. [Why in Perl?](https://xkcd.com/224/)
 
 ![Individual WXS pipeline](wes_pipe.png)
 
@@ -13,7 +13,7 @@ curl -sL https://raw.githubusercontent.com/asqwerty666/wespipe/refs/heads/main/i
 ```
 ## scripts
 
-The whole project are some scripts that use GATK and other tools to run WXS pipeline. 
+The whole project is just a bunch of scripts that use GATK and other tools to run WXS pipeline. 
 
    * fasta2cram.pl : Transform FASTA files to aligned HG38 CRAM files
    * fasta2vcf.pl : Launch WXS pipeline from FASTA to gVCF files
@@ -32,7 +32,7 @@ Now you need to know your data. FASTA or CRAM files should be together with some
 
 and remember to index all the ref vcf files,
 
-```
+```bash
 while read -r vcf; do gatk IndexFeatureFile -I ${vcf}; done < toindex.txt
 ```
 
@@ -74,12 +74,14 @@ This info needs to be edited carefully for any step. However, it is OK if you le
 ### Some options
 
 The scripts has also some basic optional input options for do some testing in your sample,
-
+```bash
+$ ~/wespipe/myscript.pl -i project.init [-c subjects.list] [-m wgs] [-g] [-t]
+```
    * -i : the only compulsory option *-i project.init*, pointing where your init file is.
-   * -c : especify a file with a subsebt of the subjects to analyze, run the script only on these subjects
-   * -m : optional especify if tha data is WGS (*-m wgs*) or WES (*default*) 
+   * -c : especify a file with a subset of the subjects to analyze, run the script only on these subjects
+   * -m : optional especify if the data is WGS (*-m wgs*) or WES (*default*) 
    * -g : for debugging pourposes, do not remove intermediate temporary files
-   * -t : actually do not run nothing but create the full SLURM structure, usefull to inspect the slurm script that will be send into the cluster
+   * -t : actually do not run nothing but create the full SLURM structure, usefull to inspect the slurm scripts that will be send into the cluster
 
 ## TO DO
    

@@ -9,7 +9,7 @@ use SLURMACE;
 use File::Find::Rule;
 use File::Basename;
 use Cwd;
-use Data::Dump qw(dump); 
+require 'wgsInit.pm'; 
 ############################################# 
 # See: 
 #   - For WES pipeline: http://detritus.fundacioace.com/wiki/doku.php?id=genetica:wes 
@@ -18,21 +18,23 @@ use Data::Dump qw(dump);
 #
 # Data Paths  
 #
-my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/';
-my $ref_name = 'Homo_sapiens_assembly38';
+my %dpaths = data_paths();
+my $ref_dir = $dpaths{ref_dir};
+my $ref_name = $dpaths{ref_name};
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta';
 my $tmp_shit = $ENV{TMPDIR};
-my $known1 = 'Homo_sapiens_assembly38.known_indels.vcf.gz';
-my $known2 = 'Mills_and_1000G_gold_standard.indels.hg38.vcf.gz';
-my $dbsnp = 'Homo_sapiens_assembly38.dbsnp138.vcf';
-my $hcsnps = '1000G_phase1.snps.high_confidence.hg38.vcf.gz';
-my $omni = '1000G_omni2.5.hg38.vcf.gz';
-my $hapmap = 'hapmap_3.3.hg38.vcf.gz';
+my $known1 = $dpaths{known1};
+my $known2 = $dpaths{known2};
+my $dbsnp = $dpaths{dbsnp};
+my $hcsnps = $dpaths{hcsnps};
+my $omni = $dpaths{omni};
+my $hapmap = $dpaths{hapmap};
 my @chrs = (1 .. 22, "X", "Y");
 #
 # Executable Paths
 #
-my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"';
+my %epaths = exec_paths();
+my $gatk = $epaths{gatk};
 # 
 # 
 # Get CLI inputs
@@ -43,7 +45,6 @@ my $debug = 0;
 my $test = 0; 
 my $init; 
 my $mode = 'wes';
-my %wesconf;
 while (@ARGV and $ARGV[0] =~ /^-/) {         
 	$_ = shift;         
 	last if /^--$/;         
@@ -54,13 +55,7 @@ while (@ARGV and $ARGV[0] =~ /^-/) {
 	if (/^-m/) { $mode = shift; chomp($mode);}	
 } 
 die "Should supply init data file\n" unless $init;
-open IDF, "<$init";
-while (<IDF>){
-	if (/^#.*/ or /^\s*$/) { next; }
-	my ($n, $v) = /(\S*)\s*=\s*(\S*)/;
-	$wesconf{$n} = $v;
-}
-close IDF;
+my %wesconf = init_conf($init);
 my $workdir = getcwd;
 $wesconf{outdir} = $workdir.'/output' unless $wesconf{outdir};
 mkdir $wesconf{outdir} unless -d $wesconf{outdir};

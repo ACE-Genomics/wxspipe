@@ -10,10 +10,9 @@ use SLURMACE qw(send2slurm);
 use File::Find::Rule;
 use Cwd;
 use File::Temp qw( :mktemp tempdir);
-use Data::Dump qw(dump);
+require 'wxsInit.pm';
 my $cfile;
 my $outdir;
-my %wesconf;
 my $workdir = getcwd;
 my $debug = 0;
 my $init;
@@ -21,21 +20,18 @@ my $tmpdir =  $ENV{TMPDIR};
 ############################################################
 # Variables con los PATHS. Cambiar aqui lo que sea necesario
 #############################################################
-#my $src_dir =  '/nas/Genomica/01-Data/02-WXS/01-Raw.data/202211_WES_PSP-DEGESCO/fqdata/';
-my $ref_dir = '/nas/Genomica/01-Data/00-Reference_files/02-GRCh38/00_Bundle/';
-my $ref_name = 'Homo_sapiens_assembly38';
+my %dpaths = data_paths();
+my $ref_dir = $dpaths{ref_dir};
+my $ref_name = $dpaths{ref_name};
 my $tmp_shit = $ENV{TMPDIR};
-#my $search_pattern = '_1.fq.gz';
-#my $alt_pattern = '_2.fq.gz';
 my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta';
-#my $platform = 'ILLUMINA';
-#my $libraries = 'KAPPA_TE';
 #################################################################
 #################################################################
 #################################################################
-my $samtools = '/nas/software/samtools/bin/samtools';
-my $gatk = 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-Djava.io.tmpdir='.$ENV{'TMPDIR'}.' -DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"';
-my $bwa = '/nas/usr/local/bin/bwa mem -t 4 -M';
+my %epaths = exec_paths();
+my $samtools = $epaths{samtools};
+my $gatk = $epaths{gatk};
+my $bwa = $epaths{bwa};
 
 @ARGV = ("-h") unless @ARGV;
 while (@ARGV and $ARGV[0] =~ /^-/) {
@@ -46,13 +42,7 @@ while (@ARGV and $ARGV[0] =~ /^-/) {
 	if (/^-i/) { $init = shift; chomp($init);}
 }
 die "Should supply init data file\n" unless $init;
-open IDF, "<$init";
-while (<IDF>){
-	if (/^#.*/ or /^\s*$/) { next; }
-	my ($n, $v) = /(\S*)\s*=\s*(\S*)/;
-	$wesconf{$n} = $v;
-}
-close IDF;
+my %wesconf = init_conf($init);
 $wesconf{outdir} = $workdir.'/output' unless $wesconf{outdir};
 mkdir $wesconf{outdir} unless -d $wesconf{outdir};
 my $slurmdir = $wesconf{outdir}.'/slurm';

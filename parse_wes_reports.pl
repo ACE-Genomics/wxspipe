@@ -4,8 +4,7 @@ use warnings;
 use File::Temp qw(:mktemp);
 use Spreadsheet::Write;
 use Statistics::Descriptive;
-use Data::Dump qw(dump);
-my %wesconf;
+require 'wxsInit.pm';
 my $init;
 while (@ARGV and $ARGV[0] =~ /^-/) {
 	$_ = shift;
@@ -13,13 +12,7 @@ while (@ARGV and $ARGV[0] =~ /^-/) {
 	if (/^-i/) { $init = shift; chomp($init);}
 }
 die "Should supply init data file\n" unless $init;
-open IDF, "<$init";
-while (<IDF>){
-	if (/^#.*/ or /^\s*$/) { next; }
-	my ($n, $v) = /(\S*)\s*=\s*(\S*)/;
-	$wesconf{$n} = $v;
-}
-close IDF;
+my %wesconf = init_conf($init);
 my $ipath = $wesconf{src_dir}.'/';
 die "Should supply source data directory in init file\n" unless $ipath and -d $ipath;
 ############ Paths #######################################
