@@ -84,7 +84,7 @@ This info needs to be edited carefully for any step. However, it is OK if you le
 
 The scripts has also some basic optional input options for do some testing in your sample,
 ```bash
-$ ~/wespipe/myscript.pl -i project.init [-c subjects.list] [-m wgs] [-g] [-t]
+~/wespipe/myscript.pl -i project.init [-c subjects.list] [-m wgs] [-g] [-t]
 ```
    * -i : the only compulsory option *-i project.init*, pointing where your init file is.
    * -c : especify a file with a subset of the subjects to analyze, run the script only on these subjects
