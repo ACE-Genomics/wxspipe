@@ -10,7 +10,7 @@ use SLURMACE qw(send2slurm);
 use File::Find::Rule;
 use Cwd;
 use File::Temp qw( :mktemp tempdir);
-require 'wxsInit.pm';
+use wxsInit;
 my $cfile;
 my $outdir;
 my $workdir = getcwd;

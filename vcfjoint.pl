@@ -9,7 +9,7 @@ use SLURMACE;
 use File::Find::Rule;
 use File::Basename;
 use Cwd;
-require 'wxsInit.pm'; 
+use wxsInit; 
 ############################################# 
 # See: 
 #   - For WES pipeline: http://detritus.fundacioace.com/wiki/doku.php?id=genetica:wes 
@@ -98,7 +98,7 @@ my %gtask = (cpus => 12, time => '72:0:0', mem_per_cpu => '4G', debug => $test, 
 my $ppool = join(' -I ', @tmp_joint);
 $gtask{command} = "$gatk GatherVcfs -I $ppool -O $wesconf{outdir}/wes_joint_chr_norec.vcf.gz\n";
 $gtask{command}.= "$gatk IndexFeatureFile -I $wesconf{outdir}/wes_joint_chr_norec.vcf.gz\n";
-if ($mode eq 'wgs'){
+unless ($mode eq 'wgs'){
 	$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $wesconf{outdir}/wes_joint_chr_norec.vcf.gz $resss_snp $troptions_snp -O $wesconf{outdir}/wes_joint_chr.snps.recal  --tranches-file $wesconf{outdir}/wes_joint_chr.snps.recalibrate.tranches --rscript-file $wesconf{outdir}/wes_joint_chr.snps.recalibrate.plots.R\n";
 	$gtask{command}.= "$gatk VariantRecalibrator -AS -R $ref_fa -V $wesconf{outdir}/wes_joint_chr_norec.vcf.gz $resss_indel $troptions_indel -O $wesconf{outdir}/wes_joint_chr.indels.recal --tranches-file $wesconf{outdir}/wes_joint_chr.indels.recalibrate.tranches --rscript-file $wesconf{outdir}/wes_joint_chr.indels.recalibrate.plots.R\n";
 	$gtask{command}.= "$gatk  ApplyVQSR -R $ref_fa -V $wesconf{outdir}/wes_joint_chr_norec.vcf.gz  -mode SNP --truth-sensitivity-filter-level 99.7 --recal-file $wesconf{outdir}/wes_joint_chr.snps.recal  --tranches-file $wesconf{outdir}/wes_joint_chr.snps.recalibrate.tranches -O $wesconf{outdir}/wes_joint_chr.snps.g_recalibrated.vcf.gz\n";

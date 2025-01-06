@@ -7,7 +7,7 @@
 use strict;
 use warnings;
 use SLURMACE;
-require 'wxsInit.pm';
+use wxsInit;
 #############################################
 # See:
 #   - For WES pipeline: http://detritus.fundacioace.com/wiki/doku.php?id=genetica:wes

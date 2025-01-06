@@ -4,7 +4,7 @@ use warnings;
 use File::Temp qw(:mktemp);
 use Spreadsheet::Write;
 use Statistics::Descriptive;
-require 'wxsInit.pm';
+use wxsInit;
 my $init;
 while (@ARGV and $ARGV[0] =~ /^-/) {
 	$_ = shift;

@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use SLURMACE qw(send2slurm wait4jobs);
 use Cwd;
-require 'wxsInit.pm';
+use wxsInit;
 my $init;
 while (@ARGV and $ARGV[0] =~ /^-/) {
 	$_ = shift;
