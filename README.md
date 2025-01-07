@@ -43,7 +43,8 @@ So far is all ready to run the WXS pipeline.
 
 ## Just go
 
-Now you are ready to go but first you will need to create/edit an init file, that is, a file describing your data. This is an example,
+Now you are ready to go but first you will need to create/edit an init file, that is, a file describing your data. This is an example for building the *gVCF* files,
+
 
 ```
 # Source dir of FASTA or CRAM files 
@@ -71,8 +72,18 @@ platform = ILLUMINA
 # Identifier for the adquisition libraries 
 libraries = NGS
 ```
-You should respect the name of variables in this file since the scripts depend on them. Then you find the script that suits your needs and try it! Notice that every script will need an independent _init_ file since the output directory of one could be the source directory of the next. 
-This info needs to be edited carefully for any step. However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the *panel\_dir* variable do not apply for the script but is OK if you leave there, since is silently ignored by the script.
+
+You should respect the name of variables in this file since the scripts depend on them. Then you find the script that suits your needs and try it! Notice that every script will need an independent _init_ file since the output directory of one could be the source directory of the next. So, in the former example, the *init* file for running the *vcfjoint.pl* script, after *gVCF* files are obtained is something like,
+
+```
+src_dir = /home/osotolongo/wes/output 
+outdir = /home/osotolongo/wes/joint 
+search_pattern = _raw.snps.indels.g.vcf.gz
+```
+
+This info needs to be edited carefully for any step. 
+
+However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the *panel\_dir* variable do not apply for the script but is OK if you leave there, since is silently ignored by the script.
 
 ### Some options
 
