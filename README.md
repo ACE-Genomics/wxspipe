@@ -75,22 +75,25 @@ libraries = NGS
 
 You should respect the name of variables in this file since the scripts depend on them. Then you find the script that suits your needs and try it! Notice that every script will need an independent _init_ file since the output directory of one could be the source directory of the next. So, in the former example, the *init* file for running the *vcfjoint.pl* script, after *gVCF* files are obtained is something like,
 
+
 ```
 src_dir = /home/osotolongo/wes/output 
 outdir = /home/osotolongo/wes/joint 
 search_pattern = _raw.snps.indels.g.vcf.gz
 ```
 
-This info needs to be edited carefully for any step. 
+**This info needs to be edited carefully for any step.** 
 
 However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the *panel\_dir* variable do not apply for the script but is OK if you leave there, since is silently ignored by the script.
 
 ### Some options
 
 The scripts has also some basic optional input options for do some testing in your sample,
+
 ```bash
 ~/wespipe/myscript.pl -i project.init [-c subjects.list] [-m wgs] [-g] [-t]
 ```
+
    * -i : the only compulsory option *-i project.init*, pointing where your init file is.
    * -c : especify a file with a subset of the subjects to analyze, run the script only on these subjects
    * -m : optional especify if the data is WGS (*-m wgs*) or WES (*default*) 
