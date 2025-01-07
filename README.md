@@ -6,7 +6,7 @@ Parallel processing for whole exome sequencing (WES) or whole genome sequencing 
 
 ## Before you go
 
-This scripts use SLURMACE library. To install it just run the *install\_slurmace.sh* script provided here. This should install the perl module into your local PERL5 directory.
+These scripts use SLURMACE library. To install it just run the *install\_slurmace.sh* script provided here. This should install the perl module into your local PERL5 directory.
 
 ```bash
 curl -sL https://raw.githubusercontent.com/asqwerty666/wespipe/refs/heads/main/install_slurmace.sh | bash
@@ -39,7 +39,7 @@ and remember to index all the ref vcf files,
 while read -r vcf; do gatk IndexFeatureFile -I ${vcf}; done < toindex.txt
 ```
 
-So far is all ready to run the WXS pipeline.
+So far all should be ready to run the WXS pipeline.
 
 ## Just go
 
@@ -73,7 +73,7 @@ platform = ILLUMINA
 libraries = NGS
 ```
 
-You should respect the name of variables in this file since the scripts depend on them. Then you find the script that suits your needs and try it! Notice that every script will need an independent _init_ file since the output directory of one could be the source directory of the next. So, in the former example, the *init* file for running the *vcfjoint.pl* script, after *gVCF* files are obtained is something like,
+You should respect the name of variables inside this file since the scripts depend on them. Then you find the script that suits your needs and try it! Notice that every script will need an independent _init_ file since the output directory of one could be the source directory of the next. So, in the former example, the *init* file for running the *vcfjoint.pl* script, after *gVCF* files are obtained is something like,
 
 
 ```
@@ -84,11 +84,11 @@ search_pattern = _raw.snps.indels.g.vcf.gz
 
 **This info needs to be edited carefully for any step.** 
 
-However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the *panel\_dir* variable do not apply for the script but is OK if you leave there, since is silently ignored by the script.
+However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the *panel\_dir* variable do not apply for the script but is OK if you leave it there, since it is silently ignored by the script.
 
 ### Some options
 
-The scripts has also some basic optional input options for do some testing in your sample,
+The scripts has also some basic input options to do some testing in your sample,
 
 ```bash
 ~/wespipe/myscript.pl -i project.init [-c subjects.list] [-m wgs] [-g] [-t]
@@ -96,9 +96,9 @@ The scripts has also some basic optional input options for do some testing in yo
 
    * -i : the only compulsory option *-i project.init*, pointing where your init file is.
    * -c : especify a file with a subset of the subjects to analyze, run the script only on these subjects
-   * -m : optional especify if the data is WGS (*-m wgs*) or WES (*default*) 
+   * -m : optionally especify if the data is WGS (*-m wgs*) or WES (*default*) 
    * -g : for debugging pourposes, do not remove intermediate temporary files
-   * -t : actually do not run nothing but create the full SLURM structure, usefull to inspect the slurm scripts that will be send into the cluster
+   * -t : actually do not run nothing but create the full SLURM structure, useful to inspect slurm scripts that will be send into the cluster
 
 ## TO DO
    
