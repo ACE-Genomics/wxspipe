@@ -23,17 +23,12 @@ my $tmpdir =  $ENV{TMPDIR};
 # Variables con los PATHS. Cambiar aqui lo que sea necesario
 #############################################################
 my %dpaths = data_paths();
-my $ref_dir = $dpaths{ref_dir};
-my $ref_name = $dpaths{ref_name};
 my $tmp_shit = $ENV{TMPDIR};
-my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta';
+my $ref_fa = $dpaths{ref_dir}.'/'.$dpaths{ref_name}.'.fasta';
 #################################################################
 #################################################################
 #################################################################
 my %epaths = exec_paths();
-my $samtools = $epaths{samtools};
-my $gatk = $epaths{gatk};
-my $bwa = $epaths{bwa};
 
 @ARGV = ("-h") unless @ARGV;
 while (@ARGV and $ARGV[0] =~ /^-/) {
@@ -77,8 +72,8 @@ foreach my $shit (sort keys %pollos){
 		$ptask{output} = $slurmdir.'/'.$shit.'.out';
 		(my $another = $pollos{$shit}) =~ s/$wesconf{search_pattern}/$wesconf{alt_pattern}/;
 		my $rg = '"@RG\\tID:'.$shit.'\\tPL:'.$wesconf{platform}.'\\tLB:'.$wesconf{libraries}.'\\tSM:'.$shit.'"';
-		$ptask{command} = $bwa.' -R '.$rg.' '.$ref_fa.' '.$pollos{$shit}.' '.$another.' | '.$gatk.' SortSam -I /dev/stdin -O '.$tmpdir.'/'.$shit.'_sorted.bam --SORT_ORDER coordinate --CREATE_INDEX true'." --TMP_DIR $tmp_shit\n";
-		$ptask{command}.= $samtools.' view -@ 8 -T '.$ref_fa.' -C -o '.$wesconf{outdir}.'/'.$shit.'.cram '.$tmpdir.'/'.$shit.'_sorted.bam'."\n";
+		$ptask{command} = $epaths{bwa}.' -R '.$rg.' '.$ref_fa.' '.$pollos{$shit}.' '.$another.' | '.$epaths{gatk}.' SortSam -I /dev/stdin -O '.$tmpdir.'/'.$shit.'_sorted.bam --SORT_ORDER coordinate --CREATE_INDEX true'." --TMP_DIR $tmp_shit\n";
+		$ptask{command}.= $epaths{samtools}.' view -@ 8 -T '.$ref_fa.' -C -o '.$wesconf{outdir}.'/'.$shit.'.cram '.$tmpdir.'/'.$shit.'_sorted.bam'."\n";
 		$ptask{command}.= 'rm '.$tmpdir.'/'.$shit.'_sorted.bam';
 		send2slurm(\%ptask);
 	}

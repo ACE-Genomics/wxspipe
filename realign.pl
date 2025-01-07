@@ -19,18 +19,12 @@ use wxsInit;
 # Data Paths
 #
 my %dpaths = data_paths();
-my $ref_dir = $dpaths{ref_dir};
-my $ref_name = $dpaths{ref_name};
-my $ref_fa = $ref_dir.'/'.$ref_name.'.fasta';
+my $ref_fa = $dpaths{ref_dir}.'/'.$dpaths{ref_name}.'.fasta';
 my $tmp_shit = $ENV{TMPDIR};
 #
 # Executable Paths
 #
 my %epaths = exec_paths(); 
-my $fastqc = $epaths{fastqc};
-my $bwa = $epaths{bwa};
-my $samtools = $epaths{samtools};
-my $gatk = $epaths{gatk};
 #
 # Get CLI inputs
 #
@@ -71,7 +65,7 @@ my %cdata = (cpus => 4, time => '24:0:0', mem_per_cpu => '4G', debug => $test);
 my @jobs;
 foreach my $pollo (@mlist){
 	my $tmpdir = $tmp_shit.'/'.$pollo;
-	my @inqs = split "\n", qx"$samtools view -H $wesconf{src_dir}/$pollo/$pollo.bam";
+	my @inqs = split "\n", qx"$epaths{samtools} view -H $wesconf{src_dir}/$pollo/$pollo.bam";
 	my %params;
 	foreach my $inq (@inqs){
 	       if( $inq	=~ /^\@RG.*/){
@@ -83,13 +77,13 @@ foreach my $pollo (@mlist){
 	$cdata{output} =  $slurmdir.'/'.$pollo.'_RevertSam.out';
 	$cdata{command} = "mkdir -p $tmpdir\n";
 	$cdata{command}.= "cp $wesconf{src_dir}/$pollo/$pollo.b* $tmpdir/\n";
-	$cdata{command}.= "$gatk RevertSam -I $tmpdir/$pollo.bam -O $tmpdir/$pollo"."_u.bam -R $ref_fa\n";
-	$cdata{command}.= "$gatk SortSam -I $tmpdir/$pollo"."_u.bam -O $tmpdir/$pollo"."_us.bam -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
-	$cdata{command}.= "$gatk SamToFastq -I $tmpdir/$pollo.bam -FASTQ $tmpdir/$pollo"."_a.fastq -F2 $tmpdir/$pollo"."_b.fastq -R $ref_fa\n";
-	$cdata{command}.= "$bwa -R \"\@RG\\tID:$params{ID}\\tPL:$params{PL}\\tLB:$params{LB}\\tSM:$params{SM}\" $ref_fa $tmpdir/$pollo"."_a.fastq $tmpdir/$pollo"."_b.fastq > $tmpdir/$pollo"."_alignment.sam\n";
-	$cdata{command}.= "$gatk SortSam -I $tmpdir/$pollo"."_alignment.sam -O $tmpdir/$pollo"."_salignment.sam  -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
-	$cdata{command}.= "$gatk MergeBamAlignment -ALIGNED $tmpdir/$pollo"."_salignment.sam -UNMAPPED $tmpdir/$pollo"."_us.bam -R $ref_fa -O $tmpdir/$pollo"."_merged.bam\n";
-	$cdata{command}.= "$gatk AddOrReplaceReadGroups -I  $tmpdir/$pollo"."_merged.bam -O $wesconf{outdir}/$pollo.sam -ID $params{ID} -PL $params{PL} -LB $params{LB} -PU $params{ID} -SM $params{SM}\n";
+	$cdata{command}.= "$epaths{gatk} RevertSam -I $tmpdir/$pollo.bam -O $tmpdir/$pollo"."_u.bam -R $ref_fa\n";
+	$cdata{command}.= "$epaths{gatk} SortSam -I $tmpdir/$pollo"."_u.bam -O $tmpdir/$pollo"."_us.bam -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
+	$cdata{command}.= "$epaths{gatk} SamToFastq -I $tmpdir/$pollo.bam -FASTQ $tmpdir/$pollo"."_a.fastq -F2 $tmpdir/$pollo"."_b.fastq -R $ref_fa\n";
+	$cdata{command}.= "$epaths{bwa} -R \"\@RG\\tID:$params{ID}\\tPL:$params{PL}\\tLB:$params{LB}\\tSM:$params{SM}\" $ref_fa $tmpdir/$pollo"."_a.fastq $tmpdir/$pollo"."_b.fastq > $tmpdir/$pollo"."_alignment.sam\n";
+	$cdata{command}.= "$epaths{gatk} SortSam -I $tmpdir/$pollo"."_alignment.sam -O $tmpdir/$pollo"."_salignment.sam  -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
+	$cdata{command}.= "$epaths{gatk} MergeBamAlignment -ALIGNED $tmpdir/$pollo"."_salignment.sam -UNMAPPED $tmpdir/$pollo"."_us.bam -R $ref_fa -O $tmpdir/$pollo"."_merged.bam\n";
+	$cdata{command}.= "$epaths{gatk} AddOrReplaceReadGroups -I  $tmpdir/$pollo"."_merged.bam -O $wesconf{outdir}/$pollo.sam -ID $params{ID} -PL $params{PL} -LB $params{LB} -PU $params{ID} -SM $params{SM}\n";
 	$cdata{command}.= "rm -rf $tmpdir\n" unless $debug;
 	my $jid = send2slurm(\%cdata);
 	push @jobs, $jid;
