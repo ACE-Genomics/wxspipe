@@ -7,6 +7,8 @@
 use strict;
 use warnings;
 use SLURMACE;
+use FindBin; 
+use lib "$FindBin::Bin";
 use wxsInit;
 #############################################
 # See:

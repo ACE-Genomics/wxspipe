@@ -4,6 +4,8 @@ use warnings;
 use File::Temp qw(:mktemp);
 use Spreadsheet::Write;
 use Statistics::Descriptive;
+use FindBin; 
+use lib "$FindBin::Bin";
 use wxsInit;
 my $init;
 while (@ARGV and $ARGV[0] =~ /^-/) {

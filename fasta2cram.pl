@@ -10,6 +10,8 @@ use SLURMACE qw(send2slurm);
 use File::Find::Rule;
 use Cwd;
 use File::Temp qw( :mktemp tempdir);
+use FindBin; 
+use lib "$FindBin::Bin";
 use wxsInit;
 my $cfile;
 my $outdir;

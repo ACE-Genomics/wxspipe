@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use SLURMACE qw(send2slurm wait4jobs);
 use Cwd;
+use FindBin; 
+use lib "$FindBin::Bin";
 use wxsInit;
 my $init;
 while (@ARGV and $ARGV[0] =~ /^-/) {

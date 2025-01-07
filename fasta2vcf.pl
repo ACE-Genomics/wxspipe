@@ -9,6 +9,8 @@ use SLURMACE;
 use File::Find::Rule;
 use File::Basename;
 use Cwd;
+use FindBin;
+use lib "$FindBin::Bin";
 use wxsInit; 
 ############################################# 
 # See: 

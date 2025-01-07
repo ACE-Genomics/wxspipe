@@ -12,7 +12,7 @@ This scripts use SLURMACE library. To install it just run the *install\_slurmace
 curl -sL https://raw.githubusercontent.com/asqwerty666/wespipe/refs/heads/main/install_slurmace.sh | bash
 ```
 
-**Also, in order to the scripts work, you should edit and move the module *wxsInit.pm* to your local perl library directory, guaranteeing that you local reference data and executable paths are found.**
+**Also, in order to the scripts work properly, you should edit the module *wxsInit.pm* guaranteeing that you local reference data and executable paths are found.**
 
 ## scripts
 
