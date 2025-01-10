@@ -7,6 +7,7 @@ use Statistics::Descriptive;
 use FindBin; 
 use lib "$FindBin::Bin";
 use wxsInit;
+use Cwd;
 my $init;
 while (@ARGV and $ARGV[0] =~ /^-/) {
 	$_ = shift;
@@ -15,6 +16,8 @@ while (@ARGV and $ARGV[0] =~ /^-/) {
 }
 die "Should supply init data file\n" unless $init;
 my  %wesconf = init_conf $init;
+my $wdir =  $wesconf{outdir} || cwd();
+mkdir $wdir unless -d $wdir;
 my $ipath = $wesconf{src_dir}.'/';
 die "Should supply source data directory in init file\n" unless $ipath and -d $ipath;
 ############ Paths #######################################
@@ -97,7 +100,7 @@ foreach my $pollo (@pollos) {
 	close IDF;
 }
 ##################################### Escribe archivos finales en varios formatos ###################################
-my $ofile0 = 'report_all.csv';
+my $ofile0 = $wdir.'/report_all.csv';
 open ODF, ">$ofile0";
 print ODF "Sample,RawCoverage,MeanCoverage,PCT_10x,PCT_20x,PCT_30x,PCT_40x,PCT_50x,PCT_60x,PCT_70x,PCT_80x,PCT_90x,PCT_100x,dbSNP_nSNPs_all,dbSNP_nSNPs_known,dbSNP_nSNPs_novel,dbSNP_nInsertions_all,dbSNP_nInsertions_known,dbSNP_nInsertions_novel,dbSNP_nDeletions_all,dbSNP_nDeletions_known,dbSNP_nDeletions_novel,tiTvRatio_all,tiTvRatio_known,tiTvRatio_novel,Freemix\n";
 foreach my $pollo (@pollos) {
@@ -137,7 +140,7 @@ foreach my $pollo (@pollos) {
 }
 close ODF;
 
-my $ofile1 = 'report_all.xlsx';
+my $ofile1 = $wdir.'/report_all.xlsx';
 my $workbook = Spreadsheet::Write->new(file => $ofile1, sheet => 'DATA');
 $workbook->addrow(['Sample','RawCoverage','MeanCoverage','PCT_10x','PCT_20x','PCT_30x','PCT_40x','PCT_50x','PCT_60x','PCT_70x','PCT_80x','PCT_90x','PCT_100x','dbSNP_nSNPs_all','dbSNP_nSNPs_known','dbSNP_nSNPs_novel','dbSNP_nInsertions_all','dbSNP_nInsertions_known','dbSNP_nInsertions_novel','dbSNP_nDeletions_all','dbSNP_nDeletions_known','dbSNP_nDeletions_novel','tiTvRatio_all','tiTvRatio_known','tiTvRatio_novel','Freemix']);
 foreach my $pollo (@pollos) {
@@ -179,20 +182,20 @@ open RSF, ">$rplt";
 	print RSF "library(ggplot2)\n";
 	print RSF "dbsnp <- read.csv(\"$ofile\")\n";
 	print RSF "ggplot(dbsnp, aes(y=tiTvRatio, fill=Novelty)) + geom_boxplot() + theme(axis.title.y=element_blank(), legend.position = \"bottom\") + ggtitle(\"TiTvRatios\")-> p\n";
-	print RSF "ggsave(p, filename = \"titvratios.png\", device = png, type = \"cairo\", dpi=300, width = 4, height = 3, units = \"in\")\n";
+	print RSF "ggsave(p, filename = \"$wdir/titvratios.png\", device = png, type = \"cairo\", dpi=300, width = 4, height = 3, units = \"in\")\n";
 	print RSF "qc <- read.csv(\"$ofile0\")\n";
 	print RSF "ggplot(qc, aes(y=Freemix)) + geom_boxplot(color=\"blue\", outlier.color=\"navy\") +  theme(axis.title.y=element_blank())  + ggtitle(\"Freemix\")-> p\n";
-	print RSF "ggsave(p, filename = \"freemix.png\", device = png, type = \"cairo\", dpi=300, width = 4, height = 3, units = \"in\")\n";
+	print RSF "ggsave(p, filename = \"$wdir/freemix.png\", device = png, type = \"cairo\", dpi=300, width = 4, height = 3, units = \"in\")\n";
 	print RSF "cvg <- read.csv(\"$cfile\")\n";
 	print RSF "ggplot(cvg, aes(y=Coverage, fill=Type)) + geom_boxplot() +  theme(axis.title.y=element_blank(), legend.position = \"bottom\")  + ggtitle(\"Coverage\") -> p\n";
-	print RSF "ggsave(p, filename = \"coverage.png\", device = png, type = \"cairo\", dpi=300, width = 4, height = 3, units = \"in\")\n";
+	print RSF "ggsave(p, filename = \"$wdir/coverage.png\", device = png, type = \"cairo\", dpi=300, width = 4, height = 3, units = \"in\")\n";
 close RSF;
 system("Rscript $rplt");
 unlink $rplt;
-system("montage titvratios.png freemix.png coverage.png -tile 3x1 -geometry +0+0 report.png");
-unlink 'titvratios.png', 'freemix.png', 'coverage.png';
+system("montage $wdir/titvratios.png $wdir/freemix.png $wdir/coverage.png -tile 3x1 -geometry +0+0 $wdir/report.png");
+unlink $wdir.'/titvratios.png', $wdir.'/freemix.png', $wdir.'/coverage.png';
 #my $rmark = mktemp($ENV{TMPDIR}.'/rmd.XXXXXXX');
-my $rmark = 'qc_report.rmd';
+my $rmark = $wdir.'/qc_report.rmd';
 open RSF, ">$rmark";
 	print RSF "---\n";
 	print RSF "title: QC Report\n";
@@ -266,9 +269,9 @@ unlink $rplt;
 # que es identico pero que ahora si se puede abrir sin problemas con el 365
 # gracias Microsoft por la compatibilidad entre tus propios formatos!
 #####################################################################################
-system("unoconv -d document -f docx -o report_data report_tmp.docx");
+system("unoconv -d document -f docx -o $wdir/report_data report_tmp.docx");
 unlink "report_tmp.docx";
-my $hff = "contamination.csv";
+my $hff = "$wdir/contamination.csv";
 open ODF, ">$hff";
 print ODF "Sample,RawCoverage,Freemix,TiTvRatio,PCT_20x,PCT_30x,Comments\n";
 foreach my $pollo (@pollos) {
@@ -277,7 +280,7 @@ foreach my $pollo (@pollos) {
 	}
 }
 close ODF;
-$ofile = "contamination.xlsx";
+$ofile = "$wdir/contamination.xlsx";
 $workbook = Spreadsheet::Write->new(file => $ofile, sheet => 'Samples contamination');
 $workbook->addrow(['Sample','RawCoverage','Freemix','TiTvRatio','PCT_20x','PCT_30x','Comments']);
 foreach my $pollo (@pollos) {
