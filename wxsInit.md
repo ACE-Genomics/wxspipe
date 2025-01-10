@@ -12,7 +12,7 @@ Just a way to initialize variable for all scripts. You should edit paths to refe
 
 - init\_conf
 
-    Read init file and export a hash of variables. 
+    Read init file and export a hash of variables. Yes, you can customize it and change your init files according but is OK this way 
 
     Usage:
 

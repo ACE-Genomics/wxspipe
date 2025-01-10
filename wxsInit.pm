@@ -55,7 +55,7 @@ sub data_paths {
 
 =item init_conf
 
-Read init file and export a hash of variables. 
+Read init file and export a hash of variables. Yes, you can customize it and change your init files according but is OK this way 
 
 Usage:
 		
