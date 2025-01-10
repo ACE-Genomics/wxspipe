@@ -82,6 +82,13 @@ outdir = /home/osotolongo/wes/joint
 search_pattern = _raw.snps.indels.g.vcf.gz
 ```
 
+while for the reports generation is enough with something like,
+
+``` 
+src_dir = /home/osotolongo/wes/output 
+outdir = /home/osotolongo/wes/report 
+```
+
 **This info needs to be edited carefully for any step.** 
 
 However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the *panel\_dir* variable do not apply for the script but is OK if you leave it there, since it is silently ignored by the script.
