@@ -14,7 +14,7 @@ our $VERSION = 0.1;
 
 =head1 wxsInit
 
-Just a way to initialize variable for all scripts
+Just a way to initialize variable for all scripts. You should edit paths to reference library and executables inside the functions. Yep, maybe not the simplest way but the easiest one to implement in my mind
 
 =over
 
