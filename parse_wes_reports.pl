@@ -39,7 +39,7 @@ my %evals;
 ################ Lee los reports #####################################
 foreach my $pollo (@pollos) {
 	my $ifile = $ipath.$pollo.'/results/'.$pollo.$raw_suffix.'.sample_summary';
-	open IDF, "<$ifile";
+	open IDF, "<$ifile"  or die "No such file: $ifile\n";
 	while (<IDF>){
 		#sample_id,total,mean,granular_third_quartile,granular_median,granular_first_quartile,%_bases_above_10,%_bases_above_15,%_bases_above_20,%_bases_above_30,%_bases_above_40,%_bases_above_50,%_bases_above_60,%_bases_above_70,%_bases_above_80,%_bases_above_90,%_bases_above_100
 		#22D28227621,7340059881,167.12,203,167,130,99.1,99.0,98.8,98.5,98.1,97.8,97.3,96.4,94.9,92.7,89.6
@@ -106,6 +106,7 @@ foreach my $pollo (@pollos) {
 			#SEQ_ID RG CHIP_ID #SNPS #READS AVG_DP FREEMIX FREELK1 FREELK0 FREE_RH FREE_RA CHIPMIX CHIPLK1 CHIPLK0 CHIP_RH CHIP_RA DPREF RDPHET RDPALT 
 			#22D28227616 NA NA 9892 1120289 117.913 0.019543 -206006 -217696 NA NA NA NA NA NA NA NA NA NA 
 			my ($freemix) = /^\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)\s+.*/;
+			#$freemix =~ s/e-0/e-/;
 			$evals{$pollo}{'Freemix'} = $freemix;
 		}
 	}
@@ -224,9 +225,9 @@ open RSF, ">$rmark";
 		push @rc, $evals{$pollo}{'RawCoverage'};
 		$frc++ if ($evals{$pollo}{'RawCoverage'} < 100.0);
 		push @frm, $evals{$pollo}{'Freemix'};
-		$ffrm++ if ($evals{$pollo}{'Freemix'} gt 0.05);
+		$ffrm++ if ($evals{$pollo}{'Freemix'} > 0.05);
 		push @titv, $evals{$pollo}{'tiTvRatio'}{'all'};
-		$ftitv++ if (($evals{$pollo}{'tiTvRatio'}{'all'} lt 3.0) or ($evals{$pollo}{'tiTvRatio'}{'all'} gt 3.3));
+		$ftitv++ if (($evals{$pollo}{'tiTvRatio'}{'all'} < 3.0) or ($evals{$pollo}{'tiTvRatio'}{'all'} > 3.3));
 	}
 	my $src = Statistics::Descriptive::Full->new();
 	$src->add_data(@rc);	
@@ -254,7 +255,7 @@ open RSF, ">$rmark";
 	print RSF "| Sample | RawCoverage | Freemix | TiTvRatio | PCT_20x | PCT_30x | Comments |\n";
 	print RSF "|:---|---:|---:|---:|---:|---:|:---|\n";
 	foreach my $pollo (@pollos) {
-		if ($evals{$pollo}{'Freemix'} gt 0.05){
+		if ($evals{$pollo}{'Freemix'} > 0.05){
 			print RSF "|$pollo|".sprintf("%.2f",$evals{$pollo}{'RawCoverage'})."|".sprintf("%.2f",$evals{$pollo}{'Freemix'})."|".sprintf("%.2f",$evals{$pollo}{'tiTvRatio'}{'all'})."|".sprintf("%.3f",$evals{$pollo}{'PCT_20x'})."|".sprintf("%.3f",$evals{$pollo}{'PCT_30x'})."| |\n";
 		}
 	}
@@ -288,7 +289,7 @@ my $hff = "$wdir/contamination.csv";
 open ODF, ">$hff";
 print ODF "Sample,RawCoverage,Freemix,TiTvRatio,PCT_20x,PCT_30x,Comments\n";
 foreach my $pollo (@pollos) {
-	if ($evals{$pollo}{'Freemix'} gt 0.05){
+	if ($evals{$pollo}{'Freemix'} > 0.05){
 		print ODF "$pollo,$evals{$pollo}{'RawCoverage'},$evals{$pollo}{'Freemix'},$evals{$pollo}{'tiTvRatio'}{'all'},$evals{$pollo}{'PCT_20x'},$evals{$pollo}{'PCT_30x'},\n";
 	}
 }

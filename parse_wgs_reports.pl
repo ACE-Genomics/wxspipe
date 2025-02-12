@@ -211,9 +211,9 @@ open RSF, ">$rmark";
 		push @rc, $evals{$pollo}{'RawCoverage'};
 		$frc++ if ($evals{$pollo}{'RawCoverage'} < 100.0);
 		push @frm, $evals{$pollo}{'Freemix'};
-		$ffrm++ if ($evals{$pollo}{'Freemix'} gt 0.05);
+		$ffrm++ if ($evals{$pollo}{'Freemix'} > 0.05);
 		push @titv, $evals{$pollo}{'tiTvRatio'}{'all'};
-		$ftitv++ if (($evals{$pollo}{'tiTvRatio'}{'all'} lt 2.0) or ($evals{$pollo}{'tiTvRatio'}{'all'} gt 2.1));
+		$ftitv++ if (($evals{$pollo}{'tiTvRatio'}{'all'} < 2.0) or ($evals{$pollo}{'tiTvRatio'}{'all'} > 2.1));
 	}
 	my $src = Statistics::Descriptive::Full->new();
 	$src->add_data(@rc);	
@@ -241,7 +241,7 @@ open RSF, ">$rmark";
 	print RSF "| Sample | RawCoverage | Freemix | TiTvRatio | PCT_20x | PCT_30x | Comments |\n";
 	print RSF "|:---|---:|---:|---:|---:|---:|:---|\n";
 	foreach my $pollo (@pollos) {
-		if ($evals{$pollo}{'Freemix'} gt 0.05){
+		if ($evals{$pollo}{'Freemix'} > 0.05){
 			print RSF "|$pollo|".sprintf("%.2f",$evals{$pollo}{'RawCoverage'})."|".sprintf("%.2f",$evals{$pollo}{'Freemix'})."|".sprintf("%.2f",$evals{$pollo}{'tiTvRatio'}{'all'})."|".sprintf("%.3f",$evals{$pollo}{'PCT_20x'})."|".sprintf("%.3f",$evals{$pollo}{'PCT_30x'})."| |\n";
 		}
 	}
@@ -275,7 +275,7 @@ my $hff = "$wdir/contamination.csv";
 open ODF, ">$hff";
 print ODF "Sample,RawCoverage,Freemix,TiTvRatio,PCT_20x,PCT_30x,Comments\n";
 foreach my $pollo (@pollos) {
-	if ($evals{$pollo}{'Freemix'} gt 0.05){
+	if ($evals{$pollo}{'Freemix'} > 0.05){
 		print ODF "$pollo,$evals{$pollo}{'RawCoverage'},$evals{$pollo}{'Freemix'},$evals{$pollo}{'tiTvRatio'}{'all'},$evals{$pollo}{'PCT_20x'},$evals{$pollo}{'PCT_30x'},\n";
 	}
 }
