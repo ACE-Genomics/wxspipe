@@ -75,6 +75,7 @@ You should respect the name of variables inside this file since the scripts depe
 
 
 ```
+project = Myproject
 src_dir = /home/osotolongo/wes/output 
 outdir = /home/osotolongo/wes/joint 
 search_pattern = _raw.snps.indels.g.vcf.gz
@@ -83,6 +84,7 @@ search_pattern = _raw.snps.indels.g.vcf.gz
 while for the reports generation is enough with something like,
 
 ``` 
+project = Myproject
 src_dir = /home/osotolongo/wes/output 
 outdir = /home/osotolongo/wes/report 
 ```
