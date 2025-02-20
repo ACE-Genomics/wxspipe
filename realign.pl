@@ -20,6 +20,7 @@ use wxsInit;
 #
 my %dpaths = data_paths();
 my $ref_fa = $dpaths{ref_dir}.'/'.$dpaths{ref_name}.'.fasta';
+my $ref_b37 = $dpaths{refb37_dir}.'/'.$dpaths{refb37_name}.'.fasta';
 my $tmp_shit = $ENV{TMPDIR};
 #
 # Executable Paths
@@ -77,9 +78,9 @@ foreach my $pollo (@mlist){
 	$cdata{output} =  $slurmdir.'/'.$pollo.'_RevertSam.out';
 	$cdata{command} = "mkdir -p $tmpdir\n";
 	$cdata{command}.= "cp $wesconf{src_dir}/$pollo/$pollo.b* $tmpdir/\n";
-	$cdata{command}.= "$epaths{gatk} RevertSam -I $tmpdir/$pollo.bam -O $tmpdir/$pollo"."_u.bam -R $ref_fa\n";
+	$cdata{command}.= "$epaths{gatk} RevertSam -I $tmpdir/$pollo.bam -O $tmpdir/$pollo"."_u.bam -R $ref_b37\n";
 	$cdata{command}.= "$epaths{gatk} SortSam -I $tmpdir/$pollo"."_u.bam -O $tmpdir/$pollo"."_us.bam -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
-	$cdata{command}.= "$epaths{gatk} SamToFastq -I $tmpdir/$pollo.bam -FASTQ $tmpdir/$pollo"."_a.fastq -F2 $tmpdir/$pollo"."_b.fastq -R $ref_fa\n";
+	$cdata{command}.= "$epaths{gatk} SamToFastq -I $tmpdir/$pollo.bam -FASTQ $tmpdir/$pollo"."_a.fastq -F2 $tmpdir/$pollo"."_b.fastq -R $ref_b37\n";
 	$cdata{command}.= "$epaths{bwa} -R \"\@RG\\tID:$params{ID}\\tPL:$params{PL}\\tLB:$params{LB}\\tSM:$params{SM}\" $ref_fa $tmpdir/$pollo"."_a.fastq $tmpdir/$pollo"."_b.fastq > $tmpdir/$pollo"."_alignment.sam\n";
 	$cdata{command}.= "$epaths{gatk} SortSam -I $tmpdir/$pollo"."_alignment.sam -O $tmpdir/$pollo"."_salignment.sam  -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
 	$cdata{command}.= "$epaths{gatk} MergeBamAlignment -ALIGNED $tmpdir/$pollo"."_salignment.sam -UNMAPPED $tmpdir/$pollo"."_us.bam -R $ref_fa -O $tmpdir/$pollo"."_merged.bam\n";

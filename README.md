@@ -47,21 +47,23 @@ Now you are ready to go but first you will need to create/edit an init file, tha
 
 
 ```
+# Project name. Useful only for joint and report processing, but recommended nonetheless,
+project = Myproject
 # Source dir of FASTA or CRAM files 
 src_dir = /home/Genomics/Data/Raw.data/Myproject/FASTA/ 
-# Directory containing BAIT and TARGET interval lists 
+# Directory containing BAIT and TARGET interval lists. 
 panel_dir = /home/Genomics/Data/Reference/Myproject/
 # BAIT + TARGET intervals.  
 unions = Exome_RefSeq_unions.interval_list 
-# BAIT + TARGET bed file. Usually the original where the interval lists come from (not sure if needed) 
+# BAIT + TARGET bed file. Usually the original where the interval lists come from (not needed but here for future applications). 
 union_bed = Exome_RefSeq_hg38.bed 
-# Output directory. Where your results will be stored 
+# Output directory. The location where your results will be stored.
 outdir = /home/osotolongo/wes/output 
-# Search pattern for FASTA or CRAM files. Actually the part that is different from first and second fasta 
+# Search pattern for FASTA or CRAM files. Actually the part that is different from first and second fasta.  
 search_pattern = _1.fastq.gz 
 # Pattern for the second FASTA 
 alt_pattern = _2.fastq.gz 
-# Pattern for excluding files. Do not process files with this string in the path 
+# Pattern for excluding files. Do not process files with this string in the path. Leave blank if not sure (or write something like "pokemon") 
 cleaner = call 
 # Identifier for the platform of adquisition 
 platform = ILLUMINA 

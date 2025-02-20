@@ -28,8 +28,8 @@ sub exec_paths {
 	my %epaths = ('fastqc' => '/nas/usr/local/bin/fastqc',
 		'bwa' => '/nas/usr/local/bin/bwa mem -t 4 -M',
 		'samtools' => '/nas/software/samtools/bin/samtools',
-		'freemix' => 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/singularity/freemix.simg VerifyBamID --SVDPrefix /scripts/1000g.phase3.10k.b38.exome.vcf.gz.dat --NumThread 8 --max-depth 1000 --DisableSanityCheck',
-		'gatk' => 'singularity run --cleanenv -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"',
+		'freemix' => 'singularity run --cleanenv -B /home:/home -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/singularity/freemix.simg VerifyBamID --SVDPrefix /scripts/1000g.phase3.10k.b38.exome.vcf.gz.dat --NumThread 8 --max-depth 1000 --DisableSanityCheck',
+		'gatk' => 'singularity run --cleanenv -B /home:/home -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/gatk4.simg gatk --java-options "-DGATK_STACKTRACE_ON_USER_EXCEPTION=true -Xmx16G"',
 	);
 	return %epaths;
 }
@@ -49,6 +49,8 @@ sub data_paths {
 	'hcsnps' => '1000G_phase1.snps.high_confidence.hg38.vcf.gz',
 	'omni' => '1000G_omni2.5.hg38.vcf.gz',
 	'hapmap' => 'hapmap_3.3.hg38.vcf.gz',
+	'refb37_dir' => '/nas/Genomica/01-Data/00-Reference_files/01-GRCh37-19/00_Bundle/',
+	'refb37_name' => 'Homo_sapiens_assembly19',
 	);
 	return %dpaths;
 }
