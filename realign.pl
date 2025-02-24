@@ -7,9 +7,11 @@
 use strict;
 use warnings;
 use SLURMACE;
+use File::Find::Rule;
 use FindBin; 
 use lib "$FindBin::Bin";
 use wxsInit;
+use Data::Dump qw(dump);
 #############################################
 # See:
 #   - For WES pipeline: http://detritus.fundacioace.com/wiki/doku.php?id=genetica:wes
@@ -54,40 +56,48 @@ if ($cfile and -f $cfile) {
 }
 # Now read the subdirs in the source dir. I will assume each one counts as a different subject
 # This can change, so I should the logic according to the organization of the samples
-opendir my $dh, $wesconf{src_dir} or die "Could not open directory: $!";
-my @mlist = grep {-d "$wesconf{src_dir}/$_" && ! /^\.{1,2}$/} readdir ($dh); 
+#opendir my $dh, $wesconf{src_dir} or die "Could not open directory: $!";
+#my @mlist = grep {-d "$wesconf{src_dir}/$_" && ! /^\.{1,2}$/} readdir ($dh); 
+# Instead we will look for file with a given extension
+my @mlist = find(file => 'name' => qr/$wesconf{search_pattern}$/, in => $wesconf{src_dir});
 # Now, a have the list of the samples. If there is any supplied list of subjkects I am going 
 # to choose only those from the existing ones
-if ($cfile) {
-      @mlist = grep {/\S/} map { $a = $_; (grep /^$a$/, @mlist)?$a:''; } @plist;
-}
+@mlist = grep {!/.*$wesconf{cleaner}.*/} @mlist if exists($wesconf{cleaner}) and $wesconf{cleaner};
+my %pollos = map {/.*\/(\w+?)$wesconf{search_pattern}$/; $1 => $_} @mlist;
 # Lets process now
 my %cdata = (cpus => 4, time => '24:0:0', mem_per_cpu => '4G', debug => $test);
 my @jobs;
-foreach my $pollo (@mlist){
-	my $tmpdir = $tmp_shit.'/'.$pollo;
-	my @inqs = split "\n", qx"$epaths{samtools} view -H $wesconf{src_dir}/$pollo/$pollo.bam";
-	my %params;
-	foreach my $inq (@inqs){
-	       if( $inq	=~ /^\@RG.*/){
-		       %params = ($inq =~ /^\@RG\t(\w+):(\w+)\t(\w+):(\w+)\t(\w+):(\w+)\t(\w+):(\w+)$/);
-	       }
+foreach my $pollo (sort keys %pollos){
+	my $go = 0;
+	if ($cfile) {
+		if ($pollo and grep {/$pollo/} @plist) {$go = 1;}
+	}else{
+		if ($pollo) {$go = 1;}
 	}
-	$cdata{job_name} = $pollo.'_RevertSam';
-	$cdata{filename} = $slurmdir.'/'.$pollo.'_RevertSam.sh';
-	$cdata{output} =  $slurmdir.'/'.$pollo.'_RevertSam.out';
-	$cdata{command} = "mkdir -p $tmpdir\n";
-	$cdata{command}.= "cp $wesconf{src_dir}/$pollo/$pollo.b* $tmpdir/\n";
-	$cdata{command}.= "$epaths{gatk} RevertSam -I $tmpdir/$pollo.bam -O $tmpdir/$pollo"."_u.bam -R $ref_b37\n";
-	$cdata{command}.= "$epaths{gatk} SortSam -I $tmpdir/$pollo"."_u.bam -O $tmpdir/$pollo"."_us.bam -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
-	$cdata{command}.= "$epaths{gatk} SamToFastq -I $tmpdir/$pollo.bam -FASTQ $tmpdir/$pollo"."_a.fastq -F2 $tmpdir/$pollo"."_b.fastq -R $ref_b37\n";
-	$cdata{command}.= "$epaths{bwa} -R \"\@RG\\tID:$params{ID}\\tPL:$params{PL}\\tLB:$params{LB}\\tSM:$params{SM}\" $ref_fa $tmpdir/$pollo"."_a.fastq $tmpdir/$pollo"."_b.fastq > $tmpdir/$pollo"."_alignment.sam\n";
-	$cdata{command}.= "$epaths{gatk} SortSam -I $tmpdir/$pollo"."_alignment.sam -O $tmpdir/$pollo"."_salignment.sam  -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
-	$cdata{command}.= "$epaths{gatk} MergeBamAlignment -ALIGNED $tmpdir/$pollo"."_salignment.sam -UNMAPPED $tmpdir/$pollo"."_us.bam -R $ref_fa -O $tmpdir/$pollo"."_merged.bam\n";
-	$cdata{command}.= "$epaths{gatk} AddOrReplaceReadGroups -I  $tmpdir/$pollo"."_merged.bam -O $wesconf{outdir}/$pollo.sam -ID $params{ID} -PL $params{PL} -LB $params{LB} -PU $params{ID} -SM $params{SM}\n";
-	$cdata{command}.= "rm -rf $tmpdir\n" unless $debug;
-	my $jid = send2slurm(\%cdata);
-	push @jobs, $jid;
+	if (-f $pollos{$pollo} and $go){
+		my $tmpdir = $tmp_shit.'/'.$pollo;
+		my @inqs = split "\n", qx"$epaths{samtools} view -H $pollos{$pollo}";
+		my %params;
+		foreach my $inq (@inqs){
+		       if( $inq	=~ /^\@RG.*/){
+			       %params = ($inq =~ /^\@RG\t(\w+):(\w+)\t(\w+):(\w+)\t(\w+):(\w+)\t(\w+):(\w+)$/);
+		       }
+		}
+		$cdata{job_name} = $pollo.'_RevertSam';
+		$cdata{filename} = $slurmdir.'/'.$pollo.'_RevertSam.sh';
+		$cdata{output} =  $slurmdir.'/'.$pollo.'_RevertSam.out';
+		$cdata{command} = "mkdir -p $tmpdir\n";
+		$cdata{command}.= "$epaths{gatk} RevertSam -I $pollos{$pollo} -O $tmpdir/$pollo"."_u.bam -R $ref_b37\n";
+		$cdata{command}.= "$epaths{gatk} SortSam -I $tmpdir/$pollo"."_u.bam -O $tmpdir/$pollo"."_us.bam -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
+		$cdata{command}.= "$epaths{gatk} SamToFastq -I $pollos{$pollo} -FASTQ $tmpdir/$pollo"."_a.fastq -F2 $tmpdir/$pollo"."_b.fastq -R $ref_b37\n";
+		$cdata{command}.= "$epaths{bwa} -R \"\@RG\\tID:$params{ID}\\tPL:$params{PL}\\tLB:$params{LB}\\tSM:$params{SM}\" $ref_fa $tmpdir/$pollo"."_a.fastq $tmpdir/$pollo"."_b.fastq > $tmpdir/$pollo"."_alignment.sam\n";
+		$cdata{command}.= "$epaths{gatk} SortSam -I $tmpdir/$pollo"."_alignment.sam -O $tmpdir/$pollo"."_salignment.sam  -SORT_ORDER queryname --TMP_DIR $tmp_shit\n";
+		$cdata{command}.= "$epaths{gatk} MergeBamAlignment -ALIGNED $tmpdir/$pollo"."_salignment.sam -UNMAPPED $tmpdir/$pollo"."_us.bam -R $ref_fa -O $tmpdir/$pollo"."_merged.bam\n";
+		$cdata{command}.= "$epaths{gatk} AddOrReplaceReadGroups -I  $tmpdir/$pollo"."_merged.bam -O $wesconf{outdir}/$pollo.sam -ID $params{ID} -PL $params{PL} -LB $params{LB} -PU $params{ID} -SM $params{SM}\n";
+		$cdata{command}.= "rm -rf $tmpdir\n" unless $debug;
+		my $jid = send2slurm(\%cdata);
+		push @jobs, $jid;
+	}
 }
 unless ($test) {
 	my %wtask = (cpus => 1, job_name => 'end_wes', filename => $slurmdir.'/end.sh', output => $slurmdir.'/end.out', dependency => 'afterok:'.join(',afterok:',@jobs));
