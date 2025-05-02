@@ -1,4 +1,4 @@
-# WESpipe
+# WXSpipe
 
 Parallel processing for whole exome sequencing (WES) or whole genome sequencing (WGS) pipeline. [Why in Perl?](https://xkcd.com/224/)
 
