@@ -13,6 +13,7 @@ use Cwd;
 use FindBin; 
 use lib "$FindBin::Bin";
 use wxsInit; 
+use Data::Dump qw(dump);
 ############################################# 
 # See: 
 #   - For WES pipeline: http://detritus.fundacioace.com/wiki/doku.php?id=genetica:wes 
@@ -64,7 +65,10 @@ if ($cfile and -f $cfile) {
 	chomp (@plist = <$handle>);         
 	close $handle; 
 }
-my @content = find(file => 'name' => "*$wesconf{search_pattern}", in => $wesconf{src_dir});
+my @lookup = split ',', $wesconf{src_dir};
+#my @content = find(file => 'name' => "*$wesconf{search_pattern}", in => @lookup);
+my @content = File::Find::Rule->file()->name("*$wesconf{search_pattern}")->in(@lookup);
+#dump @content; exit;
 my %pollos = map {/.*\/(\w+?)$wesconf{search_pattern}$/; $1 => $_} @content;
 my $hencoop = "$tmp_shit/subjects.list";
 open LDF, ">$hencoop" or die "Could not create the subject list\n";
