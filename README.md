@@ -81,7 +81,19 @@ outdir = /home/osotolongo/wes/joint
 search_pattern = _raw.snps.indels.g.vcf.gz
 ```
 
-while for the reports generation is enough with something like,
+**Also, you may run the *vcfjoint.pl* script for several projects at once if *scr_dir* variable is specified as acomma separated list of paths.** That is,
+
+``` 
+project = Myproject 
+src_dir = /home/osotolongo/wes1/output,/home/osotolongo/wes2/output,/home/osotolongo/wes3/output 
+outdir = /home/osotolongo/wes/joint 
+search_pattern = _raw.snps.indels.g.vcf.gz 
+```
+
+will look for the *gVCF* files into *wes1*, *wes2* and *wes3* projects and will build the joint file into the *output* directory.
+
+
+For the reports generation is enough with something like,
 
 ``` 
 project = Myproject
@@ -89,7 +101,7 @@ src_dir = /home/osotolongo/wes/output
 outdir = /home/osotolongo/wes/report 
 ```
 
-**This info needs to be edited carefully for any step.** 
+**Notice that this info needs to be edited carefully for any step.** 
 
 However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the *panel\_dir* variable do not apply for the script but is OK if you leave it there, since it is silently ignored by the script.
 
