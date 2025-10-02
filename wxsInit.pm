@@ -8,8 +8,8 @@ use strict; use warnings;
 package wxsInit;
 require Exporter;
 our @ISA= qw( Exporter );
-our @EXPORT_OK = qw (exec_paths data_paths init_conf);
-our @EXPORT = qw(exec_paths data_paths init_conf);
+our @EXPORT_OK = qw (exec_paths data_paths init_conf getLoggingTime);
+our @EXPORT = qw(exec_paths data_paths init_conf getLoggingTime);
 our $VERSION = 0.1;
 
 =head1 wxsInit
@@ -26,6 +26,7 @@ Send executable paths to the scripts this way. Directly edit the paths here
 
 sub exec_paths {
 	my %epaths = ('fastqc' => '/nas/usr/local/bin/fastqc',
+		'bedtools' => '/nas/software/bedtools2/bin/bedtools',
 		'bwa' => '/nas/usr/local/bin/bwa mem -t 4 -M',
 		'samtools' => '/nas/software/samtools/bin/samtools',
 		'freemix' => 'singularity run --cleanenv -B /home:/home -B /nas:/nas -B /ruby:/ruby -B /greebo:/greebo /nas/usr/local/opt/singularity/freemix.simg VerifyBamID --SVDPrefix /scripts/1000g.phase3.10k.b38.exome.vcf.gz.dat --NumThread 8 --max-depth 1000 --DisableSanityCheck',
@@ -76,6 +77,28 @@ sub init_conf{
 	}
 	close IDF;
 	return %conf;
+}
+
+=back
+
+=item getLoggingTime
+
+This function returns a timestamp based string intended to be used
+to make unique filenames
+
+Stolen from Stackoverflow
+
+usage:
+
+	getLoggingTime();
+
+=cut
+
+sub getLoggingTime {
+	#shit from stackoverflow. whatelse.
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+	my $nice_timestamp = sprintf ( "%04d%02d%02d_%02d%02d%02d",$year+1900,$mon+1,$mday,$hour,$min,$sec);
+return $nice_timestamp;
 }
 
 =back

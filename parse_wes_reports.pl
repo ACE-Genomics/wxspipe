@@ -8,6 +8,7 @@ use FindBin;
 use lib "$FindBin::Bin";
 use wxsInit;
 use Cwd;
+use Data::Dump qw(dump);
 my $init;
 while (@ARGV and $ARGV[0] =~ /^-/) {
 	$_ = shift;
@@ -27,6 +28,7 @@ my $raw_suffix = '_raw_wes_metrics.txt';
 my $padded_suffix = '_padded_wes_metrics.txt';
 my $eval_suffix = '_eval.gatkreport';
 my $freemix_suffix = '.vbid2.selfSM';
+my $vcf_suffix = '_raw.snps.indels.g.vcf.gz';
 ############ Busca las muestras  ######################### 
 my @idirs = glob( $ipath.'*' ); 
 my @pollos; 
@@ -37,6 +39,14 @@ foreach my $idir (@idirs) {
 	} 
 } 
 my %evals;
+################ Voy a intentar adivinar el label del sujeto ######################
+my %labels;
+foreach my $pollo (@pollos) {
+	my $vcf = $ipath.$pollo.'/results/'.$pollo.$vcf_suffix;
+	my $lastline = qx/bcftools view -h $vcf | tail -n 1/;
+	chomp $lastline;
+	($labels{$pollo} = $lastline) =~ s/.*\s+(\S+)$/$1/;
+}
 ################ Lee los reports #####################################
 foreach my $pollo (@pollos) {
 	my $ifile = $ipath.$pollo.'/results/'.$pollo.$raw_suffix.'.sample_summary';
@@ -44,8 +54,8 @@ foreach my $pollo (@pollos) {
 	while (<IDF>){
 		#sample_id,total,mean,granular_third_quartile,granular_median,granular_first_quartile,%_bases_above_10,%_bases_above_15,%_bases_above_20,%_bases_above_30,%_bases_above_40,%_bases_above_50,%_bases_above_60,%_bases_above_70,%_bases_above_80,%_bases_above_90,%_bases_above_100
 		#22D28227621,7340059881,167.12,203,167,130,99.1,99.0,98.8,98.5,98.1,97.8,97.3,96.4,94.9,92.7,89.6
-		if (/^$pollo.*/){
-			my ($coverage, $pct10, $pct20, $pct30, $pct40, $pct50, $pct60, $pct70, $pct80, $pct90, $pct100) = /^$pollo,\d+,(\d+\.\d+),\d+,\d+,\d+,(\d+\.\d+),\d+\.\d+,(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+)$/;
+		if (/^$labels{$pollo}.*/){
+			my ($coverage, $pct10, $pct20, $pct30, $pct40, $pct50, $pct60, $pct70, $pct80, $pct90, $pct100) = /^$labels{$pollo},\d+,(\d+\.\d+),\d+,\d+,\d+,(\d+\.\d+),\d+\.\d+,(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+),(\d+\.\d+)$/;
 			$evals{$pollo}{'RawCoverage'} = $coverage;
 			$evals{$pollo}{'PCT_10x'} = $pct10;
 			$evals{$pollo}{'PCT_20x'} = $pct20;
@@ -63,8 +73,8 @@ foreach my $pollo (@pollos) {
 	$ifile = $ipath.$pollo.'/results/'.$pollo.$wgs_suffix.'.sample_summary';
 	open IDF, "<$ifile";
 	while (<IDF>){
-		if (/^$pollo.*/){
-			my ($rcoverage) = /^$pollo,\d+,(\d+\.\d+),.*/;
+		if (/^$labels{$pollo}.*/){
+			my ($rcoverage) = /^$labels{$pollo},\d+,(\d+\.\d+),.*/;
 		 	$evals{$pollo}{'MeanCoverage'} = $rcoverage;
 		}
 	}
@@ -73,8 +83,8 @@ foreach my $pollo (@pollos) {
 	$ifile = $ipath.$pollo.'/results/'.$pollo.$padded_suffix.'.sample_summary';
 	open IDF, "<$ifile";
 	while (<IDF>){
-		if (/^$pollo.*/){
-			my ($rcoverage) = /^$pollo,\d+,(\d+\.\d+),.*/;
+		if (/^$labels{$pollo}.*/){
+			my ($rcoverage) = /^$labels{$pollo},\d+,(\d+\.\d+),.*/;
 		 	$evals{$pollo}{'PaddedCoverage'} = $rcoverage;
 		}
 	}

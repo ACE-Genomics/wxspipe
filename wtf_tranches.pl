@@ -35,7 +35,7 @@ foreach my $tranche (@tranches) {
 	(my $str_tranche = $tranche) =~ s/\.//;
 	$trjob{'filename'} = $sdir.'/'.$str_tranche.'.sh';
 	$trjob{'output'} = $sdir.'/'.$str_tranche.'.out';
-	$trjob{'command'} = "$GATK ApplyVQSR -R $ref -V $base_dir/wes_joint_chr_norec.vcf.gz -mode SNP --truth-sensitivity-filter-level $tranche --recal-file $base_dir/wes_joint_chr.snps.recal --tranches-file $base_dir/wes_joint_chr.snps.recalibrate.tranches -O $tables_dir/wes_joint_snps.$str_tranche.vcf.gz\n";
+	$trjob{'command'} = "$GATK ApplyVQSR -R $ref -V $base_dir/wes_joint_chr.snps.indels.g_recalibrated.vcf.gz -mode SNP --truth-sensitivity-filter-level $tranche --recal-file $base_dir/wes_joint_chr.snps.recal --tranches-file $base_dir/wes_joint_chr.snps.recalibrate.tranches -O $tables_dir/wes_joint_snps.$str_tranche.vcf.gz\n";
 	$trjob{'command'} .= "$GATK VariantsToTable  -R $ref -V $tables_dir/wes_joint_snps.$str_tranche.vcf.gz -F CHROM -F POS -F DP -F FILTER -F MQ -F QD -F FS -F SOR -F MQRankSum -F ReadPosRankSum -O $tables_dir/wes_joint.$str_tranche.table";
 	my $jobid = send2slurm(\%trjob);
 	push @jobs, $jobid;

@@ -65,7 +65,7 @@ if ($cfile and -f $cfile) {
 	chomp (@plist = <$handle>);         
 	close $handle; 
 }
-my %ptask = (cpus => 8, time => '24:0:0', mem_per_cpu => '4G', debug => $test);
+my %ptask = (cpus => 8, time => '72:0:0', mem_per_cpu => '4G', debug => $test);
 die "No such directory mate\n" unless -d $wesconf{src_dir};
 my @content = find(file => 'name' => qr/$wesconf{search_pattern}/, in => $wesconf{src_dir});
 # Clean the arrays 
@@ -88,7 +88,12 @@ foreach my $pollo (sort keys %pollos){
 		$ptask{filename} = $slurmdir.'/'.$pollo.'_sortIndex.sh';
 		$ptask{output} = $slurmdir.'/'.$pollo.'_sortIndex.out';
 		$ptask{command} = "mkdir -p $rdir; mkdir -p $tdir; cp $pollos{$pollo} $tdir/$pofile\n";
-		$ptask{command}.= "$epaths{gatk} SortSam -I $tdir/$pofile -O $tdir/$pollo"."_sorted.bam -R $ref_fa --SORT_ORDER coordinate --CREATE_INDEX true --TMP_DIR $tmp_shit\n";
+		if (exists($wesconf{intersect}) and $wesconf{intersect}){
+			$ptask{command}.= "$epaths{gatk} SortSam -I $tdir/$pofile -O $tdir/$pollo"."_sorted_tmp.bam -R $ref_fa --SORT_ORDER coordinate --CREATE_INDEX true --TMP_DIR $tmp_shit\n";
+			$ptask{command}.= "$epaths{bedtools} intersect -u -a $tdir/$pollo"."_sorted_tmp.bam -b $wesconf{panel_dir}/$wesconf{union_bed} > $tdir/$pollo"."_sorted.bam\n";
+		}else{
+			$ptask{command}.= "$epaths{gatk} SortSam -I $tdir/$pofile -O $tdir/$pollo"."_sorted.bam -R $ref_fa --SORT_ORDER coordinate --CREATE_INDEX true --TMP_DIR $tmp_shit\n";
+		}
 		if(exists($ptask{'dependency'})){ delete($ptask{'dependency'}) };
 		my $jid = send2slurm(\%ptask);
 		# MarkDuplicates
