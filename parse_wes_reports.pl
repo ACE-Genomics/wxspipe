@@ -17,11 +17,12 @@ while (@ARGV and $ARGV[0] =~ /^-/) {
 }
 die "Should supply init data file\n" unless $init;
 my %wesconf = init_conf($init);
-my $ipath = $wesconf{src_dir}.'/';
+#my $ipath = $wesconf{src_dir}.'/';
+my @lookup = split ',', $wesconf{src_dir};
 my $wdir =  $wesconf{outdir} || cwd();
 my $prj = $wesconf{project}?$wesconf{project}.'_':'';
 mkdir $wdir unless -d $wdir;
-die "Should supply source data directory in init file\n" unless $ipath and -d $ipath;
+die "Should supply source data directory in init file\n" unless scalar(@lookup);
 ############ Paths #######################################
 my $wgs_suffix = '_wes_metrics.txt';
 my $raw_suffix = '_raw_wes_metrics.txt';
@@ -30,26 +31,30 @@ my $eval_suffix = '_eval.gatkreport';
 my $freemix_suffix = '.vbid2.selfSM';
 my $vcf_suffix = '_raw.snps.indels.g.vcf.gz';
 ############ Busca las muestras  ######################### 
-my @idirs = glob( $ipath.'*' ); 
-my @pollos; 
-foreach my $idir (@idirs) {         
-	if ( -d $idir and -d $idir.'/results') {                 
-		my ($pollo) = $idir =~ /$ipath\/*(.*)$/;                 
-		push @pollos, $pollo;         
-	} 
+my @pollos;
+my %ppath;
+foreach my $ipath (@lookup){
+	my @idirs = glob( $ipath.'*' ); 
+	foreach my $idir (@idirs) {         
+		if ( -d $idir and -d $idir.'/results') {                 
+			my ($pollo) = $idir =~ /$ipath\/*(.*)$/;                 
+			push @pollos, $pollo;
+	       		$ppath{$pollo} = $ipath;		
+		}
+	}
 } 
 my %evals;
 ################ Voy a intentar adivinar el label del sujeto ######################
 my %labels;
 foreach my $pollo (@pollos) {
-	my $vcf = $ipath.$pollo.'/results/'.$pollo.$vcf_suffix;
+	my $vcf = $ppath{$pollo}.$pollo.'/results/'.$pollo.$vcf_suffix;
 	my $lastline = qx/bcftools view -h $vcf | tail -n 1/;
 	chomp $lastline;
 	($labels{$pollo} = $lastline) =~ s/.*\s+(\S+)$/$1/;
 }
 ################ Lee los reports #####################################
 foreach my $pollo (@pollos) {
-	my $ifile = $ipath.$pollo.'/results/'.$pollo.$raw_suffix.'.sample_summary';
+	my $ifile = $ppath{$pollo}.$pollo.'/results/'.$pollo.$raw_suffix.'.sample_summary';
 	open IDF, "<$ifile"  or die "No such file: $ifile\n";
 	while (<IDF>){
 		#sample_id,total,mean,granular_third_quartile,granular_median,granular_first_quartile,%_bases_above_10,%_bases_above_15,%_bases_above_20,%_bases_above_30,%_bases_above_40,%_bases_above_50,%_bases_above_60,%_bases_above_70,%_bases_above_80,%_bases_above_90,%_bases_above_100
@@ -70,7 +75,7 @@ foreach my $pollo (@pollos) {
 		}
 	}
 	close IDF;
-	$ifile = $ipath.$pollo.'/results/'.$pollo.$wgs_suffix.'.sample_summary';
+	$ifile = $ppath{$pollo}.$pollo.'/results/'.$pollo.$wgs_suffix.'.sample_summary';
 	open IDF, "<$ifile";
 	while (<IDF>){
 		if (/^$labels{$pollo}.*/){
@@ -80,7 +85,7 @@ foreach my $pollo (@pollos) {
 	}
 	close IDF;
 
-	$ifile = $ipath.$pollo.'/results/'.$pollo.$padded_suffix.'.sample_summary';
+	$ifile = $ppath{$pollo}.$pollo.'/results/'.$pollo.$padded_suffix.'.sample_summary';
 	open IDF, "<$ifile";
 	while (<IDF>){
 		if (/^$labels{$pollo}.*/){
@@ -90,7 +95,7 @@ foreach my $pollo (@pollos) {
 	}
 	close IDF;
 
-	$ifile  = $ipath.$pollo.'/results/'.$pollo.$eval_suffix;
+	$ifile  = $ppath{$pollo}.$pollo.'/results/'.$pollo.$eval_suffix;
 	open IDF, "<$ifile";
 	while (<IDF>){
 		if (/^CountVariants\s+dbsnp/){
@@ -110,7 +115,7 @@ foreach my $pollo (@pollos) {
 
 	}
 	close IDF;
-	$ifile = $ipath.$pollo.'/results/'.$pollo.$freemix_suffix;
+	$ifile = $ppath{$pollo}.$pollo.'/results/'.$pollo.$freemix_suffix;
 	open IDF, "<$ifile";
 	while (<IDF>){
 		if (/^\w+/){
