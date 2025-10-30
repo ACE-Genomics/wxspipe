@@ -101,6 +101,14 @@ src_dir = /home/osotolongo/wes/output
 outdir = /home/osotolongo/wes/report 
 ```
 
+or you can also get a single report from several projects at the same time,
+
+```  
+project = Myproject 
+src_dir = /home/osotolongo/wes/output,/home/osotolongo/wes2/output,/home/osotolongo/wes3/output 
+outdir = /home/osotolongo/wes/report 
+``` 
+
 **Notice that this info needs to be edited carefully for any step.** 
 
 However, it is OK if you leave unused variables as is, since the script will ignore them. For instance, if you run a WGS analysis, the *panel\_dir* variable do not apply for the script but is OK if you leave it there, since it is silently ignored by the script.
